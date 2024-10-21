@@ -160,7 +160,7 @@ public:
         isFileStream_ = false;
     }
 
-    void setStreamAttributes(unsigned char levelFilter, TimeRange timeFilter = TimeRange(),
+    void setStreamAttributes(unsigned char levelFilter, TimeRange timeFilter = ALL_TIME,
                              bool hasLevel = true, bool hasTimestamp = true)
     {
         levelFilter_ = levelFilter;
@@ -170,6 +170,11 @@ public:
         mtx_.lock();
         timeFilter_ = timeFilter;
         mtx_.unlock();
+    }
+
+    void resetStreamAttributes()
+    {
+        setStreamAttributes(ALL_LEVEL, ALL_TIME, true, true);
     }
 
     size_t count()
@@ -242,7 +247,7 @@ public:
         mtx_.unlock();
     }
 
-    void out(std::ostream& os, unsigned char levelFilter, TimeRange timeFilter = TimeRange(),
+    void out(std::ostream& os, unsigned char levelFilter, TimeRange timeFilter = ALL_TIME,
              bool hasLevel = true, bool hasTimestamp = true)
     {
         mtx_.lock();
@@ -257,7 +262,7 @@ public:
     }
 
     void out(const std::string& filename, unsigned char levelFilter,
-             TimeRange timeFilter = TimeRange(), bool hasLevel = true, bool hasTimestamp = true)
+             TimeRange timeFilter = ALL_TIME, bool hasLevel = true, bool hasTimestamp = true)
     {
         std::ofstream ofs(filename, std::ios::app);
 
@@ -333,7 +338,7 @@ inline void unbindStream()
     XLog::getInstance().unbindStream();
 }
 
-inline void setStreamAttributes(unsigned char levelFilter, TimeRange timeFilter = TimeRange(),
+inline void setStreamAttributes(unsigned char levelFilter, TimeRange timeFilter = ALL_TIME,
                                 bool hasLevel = true, bool hasTimestamp = true)
 {
     XLog::getInstance().setStreamAttributes(levelFilter, timeFilter, hasLevel, hasTimestamp);
@@ -379,14 +384,14 @@ inline void clear()
     XLog::getInstance().clear();
 }
 
-inline void out(std::ostream& os, unsigned char LevelFilter, TimeRange timeFilter = TimeRange(),
+inline void out(std::ostream& os, unsigned char LevelFilter, TimeRange timeFilter = ALL_TIME,
                 bool hasLevel = true, bool hasTimestamp = true)
 {
     XLog::getInstance().out(os, LevelFilter, timeFilter, hasLevel, hasTimestamp);
 }
 
 inline void out(const std::string& filename, unsigned char LevelFilter,
-                TimeRange timeFilter = TimeRange(), bool hasLevel = true, bool hasTimestamp = true)
+                TimeRange timeFilter = ALL_TIME, bool hasLevel = true, bool hasTimestamp = true)
 {
     XLog::getInstance().out(filename,  LevelFilter, timeFilter, hasLevel, hasTimestamp);
 }
