@@ -95,7 +95,7 @@ struct TimeRange
 
     bool isValid() const
     {
-        return start <= end || start == 0 || end == 0;
+        return start >= end && end != 0;
     }
 
     bool contains(time_t time) const
@@ -219,8 +219,10 @@ public:
 
         time_t time = getCurrentTime();
         logs_.push_back(LogData(level, time, message));
-        if (outStream_ && (levelFilter_ & level) &&
-            (timeFilter_.isValid() && timeFilter_.contains(time)))
+
+        bool levelpass = (levelFilter_ & level) != 0;
+        bool timepass = !timeFilter_.isValid() || timeFilter_.contains(time);
+        if (outStream_ && levelpass && timepass)
             *outStream_ << logDataToString_(logs_.back(), hasLevel_, hasTimestamp_) << std::endl;
 
         mtx_.unlock();
@@ -255,8 +257,9 @@ public:
         mtx_.unlock();
 
         for (const auto& data : copy) {
-            if ((levelFilter & data.level) &&
-                (timeFilter.isValid() && timeFilter.contains(data.time)))
+            bool levelpass = (levelFilter & data.level) != 0;
+            bool timepass = !timeFilter.isValid() || timeFilter.contains(data.time);
+            if (levelpass && timepass)
                 os << logDataToString_(data, hasLevel, hasTimestamp) << std::endl;
         }
     }
