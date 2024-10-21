@@ -28,7 +28,7 @@ constexpr unsigned char ALL_LEVEL = INFO | ATTENTION | WARNING | ERROR | FATAL;
 inline time_t getCurrentTime()
 {
     time_t rslt = 0;
-    time(&rslt);
+    ::time(&rslt);
 
     return rslt;
 }
@@ -36,10 +36,10 @@ inline time_t getCurrentTime()
 inline std::string timeToString(time_t time)
 {
     tm lt;
-    localtime_s(&lt, &time);
+    ::localtime_s(&lt, &time);
 
     char buffer[32] = {};
-    strftime(buffer, sizeof(buffer), "[%Y-%m-%d %H:%M:%S]", &lt);
+    ::strftime(buffer, sizeof(buffer), "[%Y-%m-%d %H:%M:%S]", &lt);
 
     return buffer;
 }
@@ -60,7 +60,7 @@ inline time_t stringToTime(const std::string& str)
     lt.tm_min = minute;
     lt.tm_sec = second;
 
-    return mktime(&lt);
+    return ::mktime(&lt);
 }
 
 inline std::string levelToString(Level level)
