@@ -23,7 +23,96 @@ enum Level : unsigned char
     FATAL = 0x10
 };
 
-constexpr unsigned char ALL = INFO | ATTENTION | WARNING | ERROR | FATAL;
+constexpr unsigned char ALL_LEVEL = INFO | ATTENTION | WARNING | ERROR | FATAL;
+
+inline time_t getCurrentTime()
+{
+    time_t rslt = 0;
+    time(&rslt);
+
+    return rslt;
+}
+
+inline std::string timeToString(time_t time)
+{
+    tm lt;
+    localtime_s(&lt, &time);
+
+    char buffer[32] = {};
+    strftime(buffer, sizeof(buffer), "[%Y-%m-%d %H:%M:%S]", &lt);
+
+    return buffer;
+}
+
+inline time_t stringToTime(const std::string& str)
+{
+    tm lt;
+    int year = std::atoi(str.substr(0, 4).c_str());
+    int month = std::atoi(str.substr(5, 2).c_str());
+    int day = std::atoi(str.substr(8, 2).c_str());
+    int hour = std::atoi(str.substr(11, 2).c_str());
+    int minute = std::atoi(str.substr(14, 2).c_str());
+    int second = std::atoi(str.substr(17, 2).c_str());
+    lt.tm_year = year - 1900;
+    lt.tm_mon = month - 1;
+    lt.tm_mday = day;
+    lt.tm_hour = hour;
+    lt.tm_min = minute;
+    lt.tm_sec = second;
+
+    return mktime(&lt);
+}
+
+inline std::string levelToString(Level level)
+{
+    switch (level) {
+        case INFO:
+            return "[Info]";
+        case ATTENTION:
+            return "[Attention]";
+        case WARNING:
+            return "[Warning]";
+        case ERROR:
+            return "[Error]";
+        case FATAL:
+            return "[Fatal]";
+        default:
+            return "";
+    }
+}
+
+struct TimeRange
+{
+    TimeRange() = default;
+
+    TimeRange(time_t start, time_t end) :
+        start(start), end(end)
+    {}
+
+    TimeRange(const std::string& start, const std::string& end) :
+        start(stringToTime(start)), end(stringToTime(end))
+    {}
+
+    bool isValid() const
+    {
+        return start <= end || start == 0 || end == 0;
+    }
+
+    bool contains(time_t time) const
+    {
+        return start <= time && time <= end;
+    }
+
+    bool contains(const std::string& str) const
+    {
+        return contains(stringToTime(str));
+    }
+
+    time_t start = 0;
+    time_t end = 0;
+};
+
+constexpr TimeRange ALL_TIME = TimeRange();
 
 class XLog
 {
@@ -32,43 +121,6 @@ public:
     {
         static XLog instance;
         return instance;
-    }
-
-    static time_t getCurrentTime()
-    {
-        time_t rslt = 0;
-        time(&rslt);
-
-        return rslt;
-    }
-
-    static std::string timeToString(time_t time)
-    {
-        tm lt;
-        localtime_s(&lt, &time);
-
-        char buffer[64] = {};
-        strftime(buffer, sizeof(buffer), "[%Y-%m-%d %H:%M:%S]", &lt);
-
-        return buffer;
-    }
-
-    static std::string levelToString(Level level)
-    {
-        switch (level) {
-            case INFO:
-                return "[Info]";
-            case ATTENTION:
-                return "[Attention]";
-            case WARNING:
-                return "[Warning]";
-            case ERROR:
-                return "[Error]";
-            case FATAL:
-                return "[Fatal]";
-            default:
-                return "";
-        }
     }
 
     void bindOutStream(std::ostream& stream)
@@ -108,11 +160,16 @@ public:
         isFileStream_ = false;
     }
 
-    void setStreamAttributes(unsigned char filter, bool hasLevel = true, bool hasTimestamp = true)
+    void setStreamAttributes(unsigned char levelFilter, TimeRange timeFilter = TimeRange(),
+                             bool hasLevel = true, bool hasTimestamp = true)
     {
-        filter_ = filter;
+        levelFilter_ = levelFilter;
         hasLevel_ = hasLevel;
         hasTimestamp_ = hasTimestamp;
+
+        mtx_.lock();
+        timeFilter_ = timeFilter;
+        mtx_.unlock();
     }
 
     size_t count()
@@ -155,8 +212,10 @@ public:
     {
         mtx_.lock();
 
-        logs_.push_back(LogData(level, getCurrentTime(), message));
-        if (outStream_ && (filter_ & level))
+        time_t time = getCurrentTime();
+        logs_.push_back(LogData(level, time, message));
+        if (outStream_ && (levelFilter_ & level) &&
+            (timeFilter_.isValid() && timeFilter_.contains(time)))
             *outStream_ << logDataToString_(logs_.back(), hasLevel_, hasTimestamp_) << std::endl;
 
         mtx_.unlock();
@@ -183,7 +242,7 @@ public:
         mtx_.unlock();
     }
 
-    void out(std::ostream& os, unsigned char filter,
+    void out(std::ostream& os, unsigned char levelFilter, TimeRange timeFilter = TimeRange(),
              bool hasLevel = true, bool hasTimestamp = true)
     {
         mtx_.lock();
@@ -191,18 +250,19 @@ public:
         mtx_.unlock();
 
         for (const auto& data : copy) {
-            if (filter & data.level)
+            if ((levelFilter & data.level) &&
+                (timeFilter.isValid() && timeFilter.contains(data.time)))
                 os << logDataToString_(data, hasLevel, hasTimestamp) << std::endl;
         }
     }
 
-    void out(const std::string& filename, unsigned char filter,
-             bool hasLevel = true, bool hasTimestamp = true)
+    void out(const std::string& filename, unsigned char levelFilter,
+             TimeRange timeFilter = TimeRange(), bool hasLevel = true, bool hasTimestamp = true)
     {
         std::ofstream ofs(filename, std::ios::app);
 
         if (ofs.is_open()) {
-            out(ofs, filter, hasLevel, hasTimestamp);
+            out(ofs, levelFilter, timeFilter, hasLevel, hasTimestamp);
             ofs.close();
         } else {
             throw std::runtime_error("Failed to open file: " + filename);
@@ -222,7 +282,7 @@ private:
     };
 
     XLog() :
-        isFileStream_(false), hasLevel_(true), hasTimestamp_(true), filter_(ALL)
+        isFileStream_(false), hasLevel_(true), hasTimestamp_(true), levelFilter_(ALL_LEVEL)
     {}
 
     ~XLog()
@@ -251,7 +311,8 @@ private:
     std::atomic<bool> isFileStream_;
     std::atomic<bool> hasLevel_;
     std::atomic<bool> hasTimestamp_;
-    std::atomic<unsigned char> filter_;
+    std::atomic<unsigned char> levelFilter_;
+    TimeRange timeFilter_;
     std::ostream* outStream_ = nullptr;
     std::mutex mtx_;
     std::list<LogData> logs_;
@@ -272,10 +333,10 @@ inline void unbindStream()
     XLog::getInstance().unbindStream();
 }
 
-inline void setStreamAttributes(unsigned char filter,
+inline void setStreamAttributes(unsigned char levelFilter, TimeRange timeFilter = TimeRange(),
                                 bool hasLevel = true, bool hasTimestamp = true)
 {
-    XLog::getInstance().setStreamAttributes(filter, hasLevel, hasTimestamp);
+    XLog::getInstance().setStreamAttributes(levelFilter, timeFilter, hasLevel, hasTimestamp);
 }
 
 inline size_t count()
@@ -318,16 +379,16 @@ inline void clear()
     XLog::getInstance().clear();
 }
 
-inline void out(std::ostream& os, unsigned char filter,
+inline void out(std::ostream& os, unsigned char LevelFilter, TimeRange timeFilter = TimeRange(),
                 bool hasLevel = true, bool hasTimestamp = true)
 {
-    XLog::getInstance().out(os, filter, hasLevel, hasTimestamp);
+    XLog::getInstance().out(os, LevelFilter, timeFilter, hasLevel, hasTimestamp);
 }
 
-inline void out(const std::string& filename, unsigned char filter,
-                bool hasLevel = true, bool hasTimestamp = true)
+inline void out(const std::string& filename, unsigned char LevelFilter,
+                TimeRange timeFilter = TimeRange(), bool hasLevel = true, bool hasTimestamp = true)
 {
-    XLog::getInstance().out(filename, filter, hasLevel, hasTimestamp);
+    XLog::getInstance().out(filename,  LevelFilter, timeFilter, hasLevel, hasTimestamp);
 }
 
 }
