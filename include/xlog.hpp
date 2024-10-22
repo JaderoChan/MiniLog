@@ -1,6 +1,35 @@
-#ifndef XLOG_H
-#define XLOG_H
+// The "xlog" library written in c++.
+//
+// Web: https://github.com/JaderoChan/XLog
+// You can contact me at: c_dl_cn@outlook.com
+//
+// MIT License
+//
+// Copyright (c) 2024 頔珞JaderoChan
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
+// Prevents multiple inclusion.
+#ifndef XLOG_HPP
+#define XLOG_HPP
+
+// Includes.
 #include <ctime>        // time_t, tm, localtime_s
 #include <cstddef>      // size_t
 #include <atomic>
@@ -11,6 +40,7 @@
 #include <fstream>
 #include <stdexcept>
 
+// Constants.
 namespace xlog
 {
 
@@ -24,6 +54,12 @@ enum Level : unsigned char
 };
 
 constexpr unsigned char ALL_LEVEL = INFO | ATTENTION | WARNING | ERROR | FATAL;
+
+}
+
+// Utility functions.
+namespace xlog
+{
 
 inline time_t getCurrentTime()
 {
@@ -80,6 +116,12 @@ inline std::string levelToString(Level level)
             return "";
     }
 }
+
+}
+
+// Classes.
+namespace xlog
+{
 
 struct TimeRange
 {
@@ -326,6 +368,12 @@ private:
     std::list<LogData> logs_;
 };
 
+}
+
+// Faster way.
+namespace xlog
+{
+
 inline void bindOutStream(std::ostream& stream)
 {
     XLog::getInstance().bindOutStream(stream);
@@ -401,4 +449,4 @@ inline void out(const std::string& filename, unsigned char LevelFilter,
 
 }
 
-#endif // !XLOG_H
+#endif // !XLOG_HPP
