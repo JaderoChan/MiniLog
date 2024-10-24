@@ -30,8 +30,8 @@
 #define XLOG_HPP
 
 // Includes.
-#include <ctime>        // time_t, tm, localtime_s
 #include <cstddef>      // size_t
+#include <ctime>        // time_t, tm, localtime_s
 #include <atomic>
 #include <mutex>
 #include <string>
