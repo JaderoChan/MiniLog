@@ -141,7 +141,7 @@ constexpr const char *MONTH_STR_CN[] = {
     u8"八月",
     u8"九月",
     u8"十月",
-    u8"十一月·",
+    u8"十一月",
     u8"十二月"
 };
 
@@ -308,7 +308,8 @@ inline double getLocalUtcOffset()
     std::time_t localTime;
     std::time(&localTime);
 
-    std::tm gmtTm = *std::gmtime(&localTime);
+    std::tm gmtTm;
+    ::gmtime_s(&gmtTm, &localTime);
 
     std::time_t gmtTime = std::mktime(&gmtTm);
 
@@ -445,7 +446,8 @@ inline std::time_t currentTime()
 inline std::string timeToString(std::time_t time,
                                 char timeSeparator = ':', char dateSeparator = '-', char separator = ' ')
 {
-    std::tm lt = *std::localtime(&time);
+    std::tm lt;
+    localtime_s(&lt, &time);
 
     int y = lt.tm_year + 1900;
 
@@ -510,7 +512,8 @@ public:
 
     DateTime(std::time_t time)
     {
-        std::tm lt = *std::localtime(&time);
+        std::tm lt;
+        ::localtime_s(&lt, &time);
 
         year_ = lt.tm_year + 1900;
         month_ = lt.tm_mon + 1;
@@ -893,7 +896,7 @@ inline void out(std::ostream& os, unsigned char LevelFilter, TimeRange timeFilte
 inline void out(const std::string& filename, unsigned char LevelFilter,
                 TimeRange timeFilter = ALL_TIME, bool hasLevel = true, bool hasTimestamp = true)
 {
-    XLog::getInstance().out(filename,  LevelFilter, timeFilter, hasLevel, hasTimestamp);
+    XLog::getInstance().out(filename, LevelFilter, timeFilter, hasLevel, hasTimestamp);
 }
 
 }
