@@ -100,7 +100,7 @@ constexpr unsigned char ALL_LEVEL = INFO | ATTENTION | WARNING | ERROR | FATAL;
 namespace
 {
 
-constexpr const char *MONTH_STR_EN[] = {
+constexpr const char* MONTH_STR_EN[] = {
     "January",
     "February",
     "March",
@@ -115,7 +115,7 @@ constexpr const char *MONTH_STR_EN[] = {
     "December"
 };
 
-constexpr const char *MONTH_STR_EN_SHORT[] = {
+constexpr const char* MONTH_STR_EN_SHORT[] = {
     "Jan",
     "Feb",
     "Mar",
@@ -130,49 +130,49 @@ constexpr const char *MONTH_STR_EN_SHORT[] = {
     "Dec"
 };
 
-constexpr const char *MONTH_STR_CN[] = {
-    u8"一月",
-    u8"二月",
-    u8"三月",
-    u8"四月",
-    u8"五月",
-    u8"六月",
-    u8"七月",
-    u8"八月",
-    u8"九月",
-    u8"十月",
-    u8"十一月",
-    u8"十二月"
+constexpr const char* MONTH_STR_CN[] = {
+    u8"\xE4\xB8\x80\xE6\x9C\x88",
+    u8"\xE4\xBA\x8C\xE6\x9C\x88",
+    u8"\xE4\xB8\x89\xE6\x9C\x88",
+    u8"\xE5\x9B\x9B\xE6\x9C\x88",
+    u8"\xE4\xBA\x94\xE6\x9C\x88",
+    u8"\xE5\x85\xAD\xE6\x9C\x88",
+    u8"\xE4\xB8\x83\xE6\x9C\x88",
+    u8"\xE5\x85\xAB\xE6\x9C\x88",
+    u8"\xE4\xB9\x9D\xE6\x9C\x88",
+    u8"\xE5\x8D\x81\xE6\x9C\x88",
+    u8"\xE5\x8D\x81\xE4\xB8\x80\xE6\x9C\x88",
+    u8"\xE5\x8D\x81\xE4\xBA\x8C\xE6\x9C\x88"
 };
 
-constexpr const char *MONTH_STR_JP[] = {
-    u8"いちがつ",
-    u8"にがつ",
-    u8"さんがつ",
-    u8"しがつ",
-    u8"ごがつ",
-    u8"ろくがつ",
-    u8"しちがつ",
-    u8"はちがつ",
-    u8"くがつ",
-    u8"じゅうがつ",
-    u8"じゅういちがつ",
-    u8"じゅうにがつ"
+constexpr const char* MONTH_STR_JP[] = {
+    u8"\xE3\x81\x84\xE3\x81\xA1\xE3\x81\x8C\xE3\x81\xA4",
+    u8"\xE3\x81\xAB\xE3\x81\x8C\xE3\x81\xA4",
+    u8"\xE3\x81\x95\xE3\x82\x93\xE3\x81\x8C\xE3\x81\xA4",
+    u8"\xE3\x81\x97\xE3\x81\x8C\xE3\x81\xA4",
+    u8"\xE3\x81\x94\xE3\x81\x8C\xE3\x81\xA4",
+    u8"\xE3\x82\x8D\xE3\x81\x8F\xE3\x81\x8C\xE3\x81\xA4",
+    u8"\xE3\x81\x97\xE3\x81\xA1\xE3\x81\x8C\xE3\x81\xA4",
+    u8"\xE3\x81\xAF\xE3\x81\xA1\xE3\x81\x8C\xE3\x81\xA4",
+    u8"\xE3\x81\x8F\xE3\x81\x8C\xE3\x81\xA4",
+    u8"\xE3\x81\x98\xE3\x82\x85\xE3\x81\x86\xE3\x81\x8C\xE3\x81\xA4",
+    u8"\xE3\x81\x98\xE3\x82\x85\xE3\x81\x86\xE3\x81\x84\xE3\x81\xA1\xE3\x81\x8C\xE3\x81\xA4",
+    u8"\xE3\x81\x98\xE3\x82\x85\xE3\x81\x86\xE3\x81\xAB\xE3\x81\x8C\xE3\x81\xA4"
 };
 
-constexpr const char *MONTH_STR_KR[] = {
-    u8"일월",
-    u8"이월",
-    u8"삼월",
-    u8"사월",
-    u8"오월",
-    u8"유월",
-    u8"칠월",
-    u8"팔월",
-    u8"구월",
-    u8"시월",
-    u8"십일월",
-    u8"십이월"
+constexpr const char* MONTH_STR_KR[] = {
+    u8"\xEC\x9D\xBC\xEC\x9B\x94",
+    u8"\xEC\x9D\xB4\xEC\x9B\x94",
+    u8"\xEC\x82\xBC\xEC\x9B\x94",
+    u8"\xEC\x82\xAC\xEC\x9B\x94",
+    u8"\xEC\x98\xA4\xEC\x9B\x94",
+    u8"\xEC\x9C\xA0\xEC\x9B\x94",
+    u8"\xEC\xB9\xA0\xEC\x9B\x94",
+    u8"\xED\x8C\x94\xEC\x9B\x94",
+    u8"\xEA\xB5\xAC\xEC\x9B\x94",
+    u8"\xEC\x8B\x9C\xEC\x9B\x94",
+    u8"\xEC\x8B\xAD\xEC\x9D\xBC\xEC\x9B\x94",
+    u8"\xEC\x8B\xAD\xEC\x9D\xB4\xEC\x9B\x94"
 };
 
 }
@@ -182,7 +182,7 @@ constexpr const char *MONTH_STR_KR[] = {
 namespace
 {
 
-constexpr const char *WEEK_STR_EN[] = {
+constexpr const char* WEEK_STR_EN[] = {
     "Sunday",
     "Monday",
     "Tuesday",
@@ -192,7 +192,7 @@ constexpr const char *WEEK_STR_EN[] = {
     "Saturday"
 };
 
-constexpr const char *WEEK_STR_EN_SHORT[] = {
+constexpr const char* WEEK_STR_EN_SHORT[] = {
     "Sun",
     "Mon",
     "Tue",
@@ -202,34 +202,34 @@ constexpr const char *WEEK_STR_EN_SHORT[] = {
     "Sat"
 };
 
-constexpr const char *WEEK_STR_CN[] = {
-    u8"星期日",
-    u8"星期一",
-    u8"星期二",
-    u8"星期三",
-    u8"星期四",
-    u8"星期五",
-    u8"星期六"
+constexpr const char* WEEK_STR_CN[] = {
+    u8"\xE6\x98\x9F\xE6\x9C\x9F\xE6\x97\xA5",
+    u8"\xE6\x98\x9F\xE6\x9C\x9F\xE4\xB8\x80",
+    u8"\xE6\x98\x9F\xE6\x9C\x9F\xE4\xBA\x8C",
+    u8"\xE6\x98\x9F\xE6\x9C\x9F\xE4\xB8\x89",
+    u8"\xE6\x98\x9F\xE6\x9C\x9F\xE5\x9B\x9B",
+    u8"\xE6\x98\x9F\xE6\x9C\x9F\xE4\xBA\x94",
+    u8"\xE6\x98\x9F\xE6\x9C\x9F\xE5\x85\xAD"
 };
 
-constexpr const char *WEEK_STR_JP[] = {
-    u8"日曜日",
-    u8"月曜日",
-    u8"火曜日",
-    u8"水曜日",
-    u8"木曜日",
-    u8"金曜日",
-    u8"土曜日"
+constexpr const char* WEEK_STR_JP[] = {
+    u8"\xE6\x97\xA5\xE6\x9B\x9C\xE6\x97\xA5",
+    u8"\xE6\x9C\x88\xE6\x9B\x9C\xE6\x97\xA5",
+    u8"\xE7\x81\xAB\xE6\x9B\x9C\xE6\x97\xA5",
+    u8"\xE6\xB0\xB4\xE6\x9B\x9C\xE6\x97\xA5",
+    u8"\xE6\x9C\xA8\xE6\x9B\x9C\xE6\x97\xA5",
+    u8"\xE9\x87\x91\xE6\x9B\x9C\xE6\x97\xA5",
+    u8"\xE5\x9C\x9F\xE6\x9B\x9C\xE6\x97\xA5"
 };
 
-constexpr const char *WEEK_STR_KR[] = {
-    u8"일요일",
-    u8"월요일",
-    u8"화요일",
-    u8"수요일",
-    u8"목요일",
-    u8"금요일",
-    u8"토요일"
+constexpr const char* WEEK_STR_KR[] = {
+    u8"\xEC\x9D\xBC\xEC\x9A\x94\xEC\x9D\xBC",
+    u8"\xEC\x9B\x94\xEC\x9A\x94\xEC\x9D\xBC",
+    u8"\xED\x99\x94\xEC\x9A\x94\xEC\x9D\xBC",
+    u8"\xEC\x88\x98\xEC\x9A\x94\xEC\x9D\xBC",
+    u8"\xEB\xAA\xA9\xEC\x9A\x94\xEC\x9D\xBC",
+    u8"\xEA\xB8\x88\xEC\x9A\x94\xEC\x9D\xBC",
+    u8"\xED\x86\xA0\xEC\x9A\x94\xEC\x9D\xBC"
 };
 
 }
@@ -318,7 +318,7 @@ inline double getLocalUtcOffset()
 
 inline bool isLeapYear(int year)
 {
-    return (year % 4 == 0 && year % 100!= 0) || year % 400 == 0;
+    return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
 }
 
 inline int yearAllDays(int year)
@@ -414,7 +414,7 @@ inline std::string getMonthName(int month, LocalFlag localFlag)
 
 inline std::string getWeekName(int week, LocalFlag localFlag)
 {
-    if(!isValidWeekday(week))
+    if (!isValidWeekday(week))
         throwError(INVALID_WEEKDAY);
 
     switch (localFlag) {
@@ -775,7 +775,7 @@ private:
     struct LogData
     {
         LogData(Level level, std::time_t time, const std::string& message) :
-            level(level), time(time), message(message) 
+            level(level), time(time), message(message)
         {}
 
         Level level = INFO;
