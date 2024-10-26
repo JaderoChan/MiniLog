@@ -739,15 +739,20 @@ public:
              bool hasLevel = true, bool hasTimestamp = true)
     {
         mtx_.lock();
-        std::list<LogData> copy = logs_;
-        mtx_.unlock();
 
-        for (const auto& data : copy) {
-            bool levelpass = (levelFilter & data.level) != 0;
-            bool timepass = !timeFilter.isValid() || timeFilter.contains(data.time);
-            if (levelpass && timepass)
-                os << logDataToString_(data, hasLevel, hasTimestamp) << std::endl;
+        if (!logs_.empty()) {
+            bool isInRange = logs_.front().time <= timeFilter.end && logs_.back().time >= timeFilter.start;
+            if (isInRange) {
+                for (const auto& data : logs_) {
+                    bool levelpass = (levelFilter & data.level) != 0;
+                    bool timepass = !timeFilter.isValid() || timeFilter.contains(data.time);
+                    if (levelpass && timepass)
+                        os << logDataToString_(data, hasLevel, hasTimestamp) << std::endl;
+                }
+            }
         }
+
+        mtx_.unlock();
     }
 
     void out(const std::string& filename, unsigned char levelFilter,
