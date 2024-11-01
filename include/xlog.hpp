@@ -1,6 +1,6 @@
-// The "xlog" library written in c++.
+// The "MiniLog" library written in c++.
 //
-// Web: https://github.com/JaderoChan/XLog
+// Web: https://github.com/JaderoChan/MiniLog
 // You can contact me at: c_dl_cn@outlook.com
 //
 // MIT License
@@ -25,8 +25,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef XLOG_HPP
-#define XLOG_HPP
+#ifndef MINILOG_HPP
+#define MINILOG_HPP
 
 #include <ctime>        // time_t, tm, time(), localtime_s(), strftime()
 #include <atomic>
@@ -36,7 +36,7 @@
 #include <fstream>
 #include <stdexcept>
 
-namespace xlog
+namespace mlog
 {
 
 using uchar = unsigned char;
@@ -78,15 +78,15 @@ inline std::string levelToString(Level level)
     }
 }
 
-class XLog
+class MLog
 {
 public:
-    XLog() :
+    MLog() :
         outFlagOfOutStream_(OUT_FLAG_ALL), outFlagOfFileStream_(OUT_FLAG_ALL),
         levelFilterOfOutStream_(LEVEL_ALL), levelFilterOfFileStream_(LEVEL_ALL)
     {}
 
-    XLog(XLog&& other) :
+    MLog(MLog&& other) :
         outFlagOfOutStream_(other.outFlagOfOutStream_.load()),
         outFlagOfFileStream_(other.outFlagOfFileStream_.load()),
         levelFilterOfOutStream_(other.levelFilterOfOutStream_.load()),
@@ -98,15 +98,15 @@ public:
         other.fileStream_ = nullptr;
     }
 
-    XLog(const XLog& other) = delete;
+    MLog(const MLog& other) = delete;
 
-    ~XLog()
+    ~MLog()
     {
         unbindOutStream();
         unbindFileStream();
     }
 
-    XLog& operator=(const XLog& other) = delete;
+    MLog& operator=(const MLog& other) = delete;
 
     void bindOutStream(std::ostream& stream, uchar outFlag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
     {
@@ -222,4 +222,4 @@ private:
 
 }
 
-#endif // !XLOG_HPP
+#endif // !MINILOG_HPP
