@@ -86,7 +86,7 @@ public:
         levelFilterOfOutStream_(LEVEL_ALL), levelFilterOfFileStream_(LEVEL_ALL)
     {}
 
-    MLog(MLog&& other) :
+    MLog(MLog&& other) noexcept :
         outFlagOfOutStream_(other.outFlagOfOutStream_.load()),
         outFlagOfFileStream_(other.outFlagOfFileStream_.load()),
         levelFilterOfOutStream_(other.levelFilterOfOutStream_.load()),
@@ -125,7 +125,7 @@ public:
 
         std::ofstream* ofs = new std::ofstream(filename, std::ios::app);
 
-        if (ofs->is_open()){
+        if (ofs->is_open()) {
             mtx_.lock();
             fileStream_ = ofs;
             mtx_.unlock();
