@@ -32,6 +32,7 @@
 #include <atomic>
 #include <mutex>
 #include <string>
+#include <unordered_map>
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
@@ -58,7 +59,9 @@ enum OutFlag : uchar
 };
 
 constexpr uchar LEVEL_ALL = 0xFF;
+constexpr uchar LEVEL_NONE = 0x00;
 constexpr uchar OUT_FLAG_ALL = 0xFF;
+constexpr uchar OUT_FLAG_NONE = 0x00;
 
 inline std::string levelToString(Level level)
 {
@@ -78,92 +81,143 @@ inline std::string levelToString(Level level)
     }
 }
 
-class MLog
+class Sinks
 {
 public:
-    MLog() :
-        outFlagOfOutStream_(OUT_FLAG_ALL), outFlagOfFileStream_(OUT_FLAG_ALL),
-        levelFilterOfOutStream_(LEVEL_ALL), levelFilterOfFileStream_(LEVEL_ALL)
+    Sinks(std::ostream& outStream, uchar outFlag = OUT_FLAG_ALL, uchar leveFilter = LEVEL_ALL) :
+        os_(&outStream), outFlag_(outFlag), leveFilter_(leveFilter), isOsCreatedByOwn_(false)
     {}
 
-    MLog(MLog&& other) noexcept :
-        outFlagOfOutStream_(other.outFlagOfOutStream_.load()),
-        outFlagOfFileStream_(other.outFlagOfFileStream_.load()),
-        levelFilterOfOutStream_(other.levelFilterOfOutStream_.load()),
-        levelFilterOfFileStream_(other.levelFilterOfFileStream_.load())
+    Sinks(const std::string& filename, uchar outFlag = OUT_FLAG_ALL, uchar leveFilter = LEVEL_ALL) :
+        os_(new std::ofstream(filename, std::ios_base::app)),
+        outFlag_(outFlag), leveFilter_(leveFilter), isOsCreatedByOwn_(true)
+    {}
+
+    ~Sinks()
     {
-        outStream_ = other.outStream_;
-        fileStream_ = other.fileStream_;
-        other.outStream_ = nullptr;
-        other.fileStream_ = nullptr;
-    }
-
-    MLog(const MLog& other) = delete;
-
-    ~MLog()
-    {
-        unbindOutStream();
-        unbindFileStream();
-    }
-
-    MLog& operator=(const MLog& other) = delete;
-
-    void bindOutStream(std::ostream& stream, uchar outFlag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
-    {
-        outFlagOfOutStream_ = outFlag;
-        levelFilterOfOutStream_ = levelFilter;
-
         mtx_.lock();
-        outStream_ = &stream;
-        mtx_.unlock();
-    }
 
-    void bindFileStream(const std::string& filename, uchar outFlag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
-    {
-        outFlagOfFileStream_ = outFlag;
-        levelFilterOfFileStream_ = levelFilter;
-
-        std::ofstream* ofs = new std::ofstream(filename, std::ios::app);
-
-        if (ofs->is_open()) {
-            mtx_.lock();
-            fileStream_ = ofs;
-            mtx_.unlock();
-        } else {
-            throw std::runtime_error("Failed to open file: " + filename);
+        if (isOsCreatedByOwn_ && os_) {
+            dynamic_cast<std::ofstream*>(os_)->close();
+            delete os_;
+            os_ = nullptr;
         }
-    }
+        isOsCreatedByOwn_ = false;
 
-    void unbindOutStream()
-    {
-        mtx_.lock();
-        outStream_ = nullptr;
         mtx_.unlock();
     }
 
-    void unbindFileStream()
+    Sinks(Sinks&& other) noexcept :
+        outFlag_(other.outFlag_.load()),
+        leveFilter_(other.leveFilter_.load()),
+        isOsCreatedByOwn_(other.isOsCreatedByOwn_.load()),
+        os_(other.os_)
+    {
+        other.os_ = nullptr;
+    }
+
+    Sinks(const Sinks& other) = delete;
+
+    Sinks &operator=(const Sinks& other) = delete;
+
+    void setOutFlag(uchar outFlag = OUT_FLAG_ALL) { outFlag_ = outFlag; }
+
+    void setLevelFilter(uchar leveFilter = LEVEL_ALL) { leveFilter_ = leveFilter; }
+
+    void setOutStream(std::ostream& outStream)
     {
         mtx_.lock();
 
-        if (fileStream_) {
-            fileStream_->close();
-            delete fileStream_;
-            fileStream_ = nullptr;
+        if (isOsCreatedByOwn_ && os_) {
+            dynamic_cast<std::ofstream*>(os_)->close();
+            delete os_;
         }
 
+        os_ = &outStream;
+        isOsCreatedByOwn_ = false;
+
         mtx_.unlock();
     }
 
-    void setOutStreamAttributes(uchar outFlag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
+    void setOutStream(const std::string& filename)
     {
-        outFlagOfOutStream_ = outFlag;
-        levelFilterOfOutStream_ = levelFilter;
+        mtx_.lock();
+
+        if (isOsCreatedByOwn_ && os_) {
+            dynamic_cast<std::ofstream*>(os_)->close();
+            delete os_;
+        }
+
+        os_ = new std::ofstream(filename, std::ios_base::app);
+        isOsCreatedByOwn_ = true;
+
+        mtx_.unlock();
     }
 
-    void setFileStreamAttributes(uchar outFlag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
+private:
+    friend class Logger;
+
+    void out(const std::string& message)
     {
-        outFlagOfFileStream_ = outFlag;
-        levelFilterOfFileStream_ = levelFilter;
+        mtx_.lock();
+
+        if (os_)
+            *os_ << message << std::endl;
+
+        mtx_.unlock();
+    }
+
+    std::atomic<bool> isOsCreatedByOwn_;
+    std::atomic<uchar> outFlag_;
+    std::atomic<uchar> leveFilter_;
+    std::ostream* os_;
+    std::mutex mtx_;
+};
+
+class Logger
+{
+public:
+    static Logger& globalLogger()
+    {
+        static Logger logger;
+        return logger;
+    }
+
+    Logger() = default;
+
+    ~Logger() = default;
+
+    Logger(const Logger& other) = delete;
+
+    Logger& operator=(const Logger& other) = delete;
+
+    void addSinks(const std::string& nameid, Sinks&& sinks)
+    {
+        mtx_.lock();
+
+        if (outs_.find(nameid) != outs_.end())
+            return;
+
+        outs_.insert( {nameid, std::move(sinks)});
+
+        mtx_.unlock();
+    }
+
+    void addSinks(const std::string& nameid, Sinks& sinks)
+    {
+        addSinks(nameid, std::move(sinks));
+    }
+
+    void removeSinks(const std::string& nameid)
+    {
+        mtx_.lock();
+
+        if (outs_.find(nameid) == outs_.end())
+            return;
+
+        outs_.erase(nameid);
+
+        mtx_.unlock();
     }
 
     void log(Level level, const std::string& message)
@@ -173,24 +227,19 @@ public:
 
         mtx_.lock();
 
-        if (outStream_ && levelFilterOfOutStream_ & level) {
-            if (outFlagOfOutStream_ & OUT_WITH_TIMESTAMP)
-                *outStream_ << curtimeStr << " ";
+        for (auto& var : outs_) {
+            if (!(level & var.second.leveFilter_))
+                continue;
 
-            if (outFlagOfOutStream_ & OUT_WITH_LEVEL)
-                *outStream_ << levelStr << " ";
+            std::string msg = message;
 
-            *outStream_ << message << std::endl;
-        }
+            if (var.second.outFlag_ & OUT_WITH_LEVEL)
+                msg = levelStr + ' ' + msg;
 
-        if (fileStream_ && levelFilterOfFileStream_ & level) {
-            if (outFlagOfFileStream_ & OUT_WITH_TIMESTAMP)
-                *fileStream_ << curtimeStr << " ";
+            if (var.second.outFlag_ & OUT_WITH_TIMESTAMP)
+                msg = curtimeStr + ' ' + msg;
 
-            if (outFlagOfFileStream_ & OUT_WITH_LEVEL)
-                *fileStream_ << levelStr << " ";
-
-            *fileStream_ << message << std::endl;
+            var.second.out(msg);
         }
 
         mtx_.unlock();
@@ -211,14 +260,29 @@ private:
         return buffer;
     }
 
-    std::atomic<unsigned char> outFlagOfOutStream_;
-    std::atomic<unsigned char> outFlagOfFileStream_;
-    std::atomic<unsigned char> levelFilterOfOutStream_;
-    std::atomic<unsigned char> levelFilterOfFileStream_;
-    std::ostream* outStream_ = nullptr;
-    std::ofstream* fileStream_ = nullptr;
+    std::unordered_map<std::string, Sinks> outs_;
     std::mutex mtx_;
 };
+
+inline void addSinks(const std::string& nameid, Sinks&& sinks)
+{
+    Logger::globalLogger().addSinks(nameid, std::move(sinks));
+}
+
+inline void addSinks(const std::string& nameid, Sinks& sinks)
+{
+    Logger::globalLogger().addSinks(nameid, sinks);
+}
+
+inline void removeSinks(const std::string& nameid)
+{
+    Logger::globalLogger().removeSinks(nameid);
+}
+
+inline void log(Level level, const std::string& message)
+{
+    Logger::globalLogger().log(level, message);
+}
 
 }
 
