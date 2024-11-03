@@ -34,7 +34,8 @@
 #include <atomic>
 #include <mutex>
 #include <string>
-#include <unordered_map>
+#include <vector>
+#include <initializer_list>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -133,27 +134,20 @@ private:
 };
 
 // The output method.
-// Contains the output stream, output flag and log level filter.
 class Sinks
 {
 public:
-    // Construct by std::ostream.
     Sinks(std::ostream& outStream, uchar outFlag = OUT_FLAG_ALL, uchar leveFilter = LEVEL_ALL) :
         os_(&outStream), outFlag_(outFlag), leveFilter_(leveFilter), isOsCreatedByOwn_(false)
     {}
 
-    // Construct by filename. (Create a file output stream use std::app.)
     Sinks(const std::string& filename, uchar outFlag = OUT_FLAG_ALL, uchar leveFilter = LEVEL_ALL) :
-        outFlag_(outFlag), leveFilter_(leveFilter), isOsCreatedByOwn_(true)
-    {
-        os_ = new std::ofstream(filename, std::ios_base::app);
-        if (!os_)
-            throw std::runtime_error("Failed to open the file: " + filename);
-    }
+        outFlag_(outFlag), leveFilter_(leveFilter), isOsCreatedByOwn_(true), filename_(filename)
+    {}
 
     ~Sinks()
     {
-        mtx_.lock();
+        std::lock_guard<std::mutex> lock(mtx_);
 
         if (isOsCreatedByOwn_ && os_) {
             dynamic_cast<std::ofstream*>(os_)->close();
@@ -161,22 +155,40 @@ public:
             os_ = nullptr;
         }
         isOsCreatedByOwn_ = false;
-
-        mtx_.unlock();
     }
 
     Sinks(Sinks&& other) noexcept :
         outFlag_(other.outFlag_.load()),
         leveFilter_(other.leveFilter_.load()),
         isOsCreatedByOwn_(other.isOsCreatedByOwn_.load()),
-        os_(other.os_)
+        os_(other.os_),
+        filename_(other.filename_)
     {
         other.os_ = nullptr;
     }
 
-    Sinks(const Sinks& other) = delete;
+    Sinks(const Sinks& other) :
+        outFlag_(other.outFlag_.load()),
+        leveFilter_(other.leveFilter_.load()),
+        isOsCreatedByOwn_(other.isOsCreatedByOwn_.load()),
+        filename_(other.filename_)
+    {
+        if (!isOsCreatedByOwn_)
+            os_ = other.os_;
+    }
 
-    Sinks &operator=(const Sinks& other) = delete;
+    Sinks &operator=(const Sinks& other)
+    {
+        outFlag_ = other.outFlag_.load();
+        leveFilter_ = other.leveFilter_.load();
+        isOsCreatedByOwn_ = other.isOsCreatedByOwn_.load();
+        filename_ = other.filename_;
+
+        if (!isOsCreatedByOwn_)
+            os_ = other.os_;
+
+        return *this;
+    }
 
     void setOutFlag(uchar outFlag = OUT_FLAG_ALL) { outFlag_ = outFlag; }
 
@@ -184,48 +196,33 @@ public:
 
     void setOutStream(std::ostream& outStream)
     {
-        mtx_.lock();
+        std::lock_guard<std::mutex> lock(mtx_);
 
         if (isOsCreatedByOwn_ && os_) {
             dynamic_cast<std::ofstream*>(os_)->close();
             delete os_;
         }
-
-        os_ = &outStream;
         isOsCreatedByOwn_ = false;
 
-        mtx_.unlock();
+        os_ = &outStream;
     }
 
     void setOutStream(const std::string& filename)
     {
-        mtx_.lock();
+        std::lock_guard<std::mutex> lock(mtx_);
 
         if (isOsCreatedByOwn_ && os_) {
             dynamic_cast<std::ofstream*>(os_)->close();
             delete os_;
         }
-
-        os_ = new std::ofstream(filename, std::ios_base::app);
-        if (!os_)
-            throw std::runtime_error("Failed to open the file: " + filename);
         isOsCreatedByOwn_ = true;
 
-        mtx_.unlock();
+        os_ = nullptr;
+        filename_ = filename;
     }
 
 private:
     friend class Logger;
-
-    void out(const std::string& message)
-    {
-        mtx_.lock();
-
-        if (os_)
-            *os_ << message << std::endl;
-
-        mtx_.unlock();
-    }
 
     // Whether the current output stream is file output stream created by filename.
     // (Whether take over memory release of output stream.)
@@ -233,6 +230,7 @@ private:
     std::atomic<uchar> outFlag_;
     std::atomic<uchar> leveFilter_;
     std::ostream* os_ = nullptr;
+    std::string filename_;
     std::mutex mtx_;
 };
 
@@ -248,26 +246,15 @@ public:
 
     Logger() = default;
 
-    Logger(const std::string& nameid, Sinks&& sinks)
+    Logger(const Sinks& sinks)
     {
-        addSinks(nameid, sinks);
+        addSinks(sinks);
     }
 
-    Logger(const std::string& nameid, Sinks& sinks)
+    Logger(std::initializer_list<Sinks> sinksList)
     {
-        addSinks(nameid, sinks);
-    }
-
-    Logger(std::initializer_list<std::pair<const std::string&, Sinks&&>> lst)
-    {
-        for (auto& var : lst)
-            addSinks(var.first, var.second);
-    }
-
-    Logger(std::initializer_list<std::pair<const std::string&, Sinks&>> lst)
-    {
-        for (auto& var : lst)
-            addSinks(var.first, var.second);
+        for (auto& var : sinksList)
+            addSinks(var);
     }
 
     ~Logger() = default;
@@ -276,47 +263,48 @@ public:
 
     Logger& operator=(const Logger& other) = delete;
 
-    void addSinks(const std::string& nameid, Sinks&& sinks)
+    void addSinks(const Sinks& sinks)
     {
-        mtx_.lock();
-
-        if (sinks_.find(nameid) != sinks_.end())
-            return;
-
-        sinks_.insert( {nameid, std::move(sinks)});
-
-        mtx_.unlock();
+        std::lock_guard<std::mutex> lock(mtx_);
+        sinks_.push_back(sinks);
     }
 
-    void addSinks(const std::string& nameid, Sinks& sinks)
+    void removeSinks(size_t index)
     {
-        addSinks(nameid, std::move(sinks));
+        std::lock_guard<std::mutex> lock(mtx_);
+
+        if (index >= sinks_.size())
+            throw std::runtime_error("The index is out range.");
+
+        sinks_.erase(sinks_.begin() + index);
     }
 
-    void removeSinks(const std::string& nameid)
+    void removeLastSinks()
     {
-        mtx_.lock();
+        std::lock_guard<std::mutex> lock(mtx_);
 
-        if (sinks_.find(nameid) == sinks_.end())
-            return;
-
-        sinks_.erase(nameid);
-
-        mtx_.unlock();
+        if (!sinks_.empty())
+            sinks_.pop_back();
     }
 
-    Sinks& get(const std::string& nameid)
+    Sinks& getSinks(size_t index)
     {
-        mtx_.lock();
+        std::lock_guard<std::mutex> lock(mtx_);
 
-        if (sinks_.find(nameid) == sinks_.end())
+        if (index >= sinks_.size())
+            throw std::runtime_error("The index is out range.");
+
+        return sinks_.at(index);
+    }
+
+    Sinks& getLastSinks()
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
+
+        if (sinks_.empty())
             throw std::runtime_error("No specify member.");
 
-        Sinks& rslt = sinks_.at(nameid);
-
-        mtx_.unlock();
-
-        return rslt;
+        return sinks_.back();
     }
 
     template<Level level, typename T>
@@ -325,17 +313,14 @@ public:
         std::string curtimeStr = currentTimeString_();
         std::string levelStr = levelToString(level);
 
-        mtx_.lock();
+        std::lock_guard<std::mutex> lock(mtx_);
 
-        for (auto& var : sinks_) {
-            auto& sinks = var.second;
-
+        for (auto& sinks : sinks_) {
             if (!(level & sinks.leveFilter_))
                 continue;
 
-            sinks.mtx_.lock();
+            std::lock_guard<std::mutex> sinksLock(sinks.mtx_);
             bool isConsole =  sinks.os_ == &std::cout || sinks.os_ == &std::cerr || sinks.os_ == &std::clog;
-            sinks.mtx_.unlock();
             bool isColorize = isConsole && (sinks.outFlag_ & OUT_WITH_COLORIZE);
 
             std::stringstream ss;
@@ -378,10 +363,15 @@ public:
 
             ss << message;
 
-            var.second.out(ss.str());
-        }
+            if (sinks.isOsCreatedByOwn_ && !sinks.os_) {
+                sinks.os_ = new std::ofstream(sinks.filename_, std::ios_base::app);
+                if (!dynamic_cast<std::ofstream*>(sinks.os_)->is_open())
+                    throw std::runtime_error("Failed to open the file: " + sinks.filename_);
+            }
 
-        mtx_.unlock();
+            if (sinks.os_)
+                *sinks.os_ << ss.str() << std::endl;
+        }
     }
 
     template<Level level, typename T>
@@ -474,7 +464,7 @@ private:
         return buffer;
     }
 
-    std::unordered_map<std::string, Sinks> sinks_;
+    std::vector<Sinks> sinks_;
     std::mutex mtx_;
 };
 
@@ -484,24 +474,29 @@ private:
 namespace mlog
 {
 
-inline void addSinks(const std::string& nameid, Sinks&& sinks)
+inline void addSinks(const Sinks& sinks)
 {
-    Logger::globalLogger().addSinks(nameid, std::move(sinks));
+    Logger::globalLogger().addSinks(sinks);
 }
 
-inline void addSinks(const std::string& nameid, Sinks& sinks)
+inline void removeSinks(size_t index)
 {
-    Logger::globalLogger().addSinks(nameid, sinks);
+    Logger::globalLogger().removeSinks(index);
 }
 
-inline void removeSinks(const std::string& nameid)
+inline void removeLastSinks()
 {
-    Logger::globalLogger().removeSinks(nameid);
+    Logger::globalLogger().removeLastSinks();
 }
 
-inline Sinks& get(const std::string& nameid)
+inline Sinks& getSinks(size_t index)
 {
-    return Logger::globalLogger().get(nameid);
+    return Logger::globalLogger().getSinks(index);
+}
+
+inline Sinks& getLastSinks()
+{
+    return Logger::globalLogger().getLastSinks();
 }
 
 template<Level level, typename T>
