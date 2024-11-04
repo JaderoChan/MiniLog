@@ -31,11 +31,9 @@
 #include <cstddef>  // size_t
 #include <ctime>    // time_t, tm, time(), localtime_s(), strftime()
 #include <chrono>   // For #StopWatch
-#include <atomic>
 #include <mutex>
 #include <string>
 #include <vector>
-#include <initializer_list>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -119,11 +117,11 @@ class StopWatch
 
 public:
     StopWatch() :
-        startTime_{clock::now()}
-    {}
+        startTime_{clock::now()} {}
 
     // Unit is millisecond.
-    ullong elapsed() const {
+    ullong elapsed() const
+    {
         return std::chrono::duration_cast<std::chrono::milliseconds>(clock::now() - startTime_).count();
     }
 
@@ -133,178 +131,97 @@ private:
     std::chrono::time_point<clock> startTime_;
 };
 
-// The output method.
-class Sinks
-{
-public:
-    Sinks(std::ostream& outStream, uchar outFlag = OUT_FLAG_ALL, uchar leveFilter = LEVEL_ALL) :
-        os_(&outStream), outFlag_(outFlag), leveFilter_(leveFilter), isOsCreatedByOwn_(false)
-    {}
-
-    Sinks(const std::string& filename, uchar outFlag = OUT_FLAG_ALL, uchar leveFilter = LEVEL_ALL) :
-        outFlag_(outFlag), leveFilter_(leveFilter), isOsCreatedByOwn_(true), filename_(filename)
-    {}
-
-    ~Sinks()
-    {
-        std::lock_guard<std::mutex> lock(mtx_);
-
-        if (isOsCreatedByOwn_ && os_) {
-            dynamic_cast<std::ofstream*>(os_)->close();
-            delete os_;
-            os_ = nullptr;
-        }
-        isOsCreatedByOwn_ = false;
-    }
-
-    Sinks(Sinks&& other) noexcept :
-        outFlag_(other.outFlag_.load()),
-        leveFilter_(other.leveFilter_.load()),
-        isOsCreatedByOwn_(other.isOsCreatedByOwn_.load()),
-        os_(other.os_),
-        filename_(other.filename_)
-    {
-        other.os_ = nullptr;
-    }
-
-    Sinks(const Sinks& other) :
-        outFlag_(other.outFlag_.load()),
-        leveFilter_(other.leveFilter_.load()),
-        isOsCreatedByOwn_(other.isOsCreatedByOwn_.load()),
-        filename_(other.filename_)
-    {
-        if (!isOsCreatedByOwn_)
-            os_ = other.os_;
-    }
-
-    Sinks &operator=(const Sinks& other)
-    {
-        outFlag_ = other.outFlag_.load();
-        leveFilter_ = other.leveFilter_.load();
-        isOsCreatedByOwn_ = other.isOsCreatedByOwn_.load();
-        filename_ = other.filename_;
-
-        if (!isOsCreatedByOwn_)
-            os_ = other.os_;
-
-        return *this;
-    }
-
-    void setOutFlag(uchar outFlag = OUT_FLAG_ALL) { outFlag_ = outFlag; }
-
-    void setLevelFilter(uchar leveFilter = LEVEL_ALL) { leveFilter_ = leveFilter; }
-
-    void setOutStream(std::ostream& outStream)
-    {
-        std::lock_guard<std::mutex> lock(mtx_);
-
-        if (isOsCreatedByOwn_ && os_) {
-            dynamic_cast<std::ofstream*>(os_)->close();
-            delete os_;
-        }
-        isOsCreatedByOwn_ = false;
-
-        os_ = &outStream;
-    }
-
-    void setOutStream(const std::string& filename)
-    {
-        std::lock_guard<std::mutex> lock(mtx_);
-
-        if (isOsCreatedByOwn_ && os_) {
-            dynamic_cast<std::ofstream*>(os_)->close();
-            delete os_;
-        }
-        isOsCreatedByOwn_ = true;
-
-        os_ = nullptr;
-        filename_ = filename;
-    }
-
-private:
-    friend class Logger;
-
-    // Whether the current output stream is file output stream created by filename.
-    // (Whether take over memory release of output stream.)
-    std::atomic<bool> isOsCreatedByOwn_;
-    std::atomic<uchar> outFlag_;
-    std::atomic<uchar> leveFilter_;
-    std::ostream* os_ = nullptr;
-    std::string filename_;
-    std::mutex mtx_;
-};
-
 class Logger
 {
 public:
     // Get the global instance of Logger.
-    static Logger& globalLogger()
+    static Logger& globalInstance()
     {
-        static Logger logger;
-        return logger;
+        static Logger instance;
+        return instance;
     }
 
     Logger() = default;
 
-    Logger(const Sinks& sinks)
+    Logger(std::ostream& os, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
     {
-        addSinks(sinks);
+        addOs(os, outflag, levelFilter);
     }
 
-    Logger(std::initializer_list<Sinks> sinksList)
+    Logger(const std::string& filename, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
     {
-        for (auto& var : sinksList)
-            addSinks(var);
+        addOs(filename, outflag, levelFilter);
     }
 
-    ~Logger() = default;
+    ~Logger()
+    {
+        for (auto& var : outs_) {
+            delete var;
+            var = nullptr;
+        }
+    }
 
     Logger(const Logger& other) = delete;
 
     Logger& operator=(const Logger& other) = delete;
 
-    void addSinks(const Sinks& sinks)
+    void addOs(std::ostream& os, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
-        sinks_.push_back(sinks);
+
+        OutStream* os_ = new OutStream(&os, outflag, levelFilter);
+        outs_.push_back(os_);
     }
 
-    void removeSinks(size_t index)
+    void addOs(const std::string& filename, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
-        if (index >= sinks_.size())
+        OutStream* os_ = new FileOutStream(filename, outflag, levelFilter);
+        outs_.push_back(os_);
+    }
+
+    void removeOs(size_t index)
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
+
+        if (index >= outs_.size())
             throw std::runtime_error("The index is out range.");
 
-        sinks_.erase(sinks_.begin() + index);
+        delete outs_.at(index);
+        outs_.erase(outs_.begin() + index);
     }
 
-    void removeLastSinks()
+    void removeLastOs()
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
-        if (!sinks_.empty())
-            sinks_.pop_back();
+        if (!outs_.empty()) {
+            delete outs_.back();
+            outs_.pop_back();
+        }
     }
 
-    Sinks& getSinks(size_t index)
+    void setOsAttribute(size_t index, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
-        if (index >= sinks_.size())
+        if (index >= outs_.size())
             throw std::runtime_error("The index is out range.");
 
-        return sinks_.at(index);
+        outs_[index]->outflag = outflag;
+        outs_[index]->levelFilter = levelFilter;
     }
 
-    Sinks& getLastSinks()
+    void setLastOsAttribute(uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
-        if (sinks_.empty())
+        if (outs_.empty())
             throw std::runtime_error("No specify member.");
 
-        return sinks_.back();
+        outs_.back()->outflag = outflag;
+        outs_.back()->levelFilter = levelFilter;
     }
 
     template<Level level, typename T>
@@ -315,24 +232,23 @@ public:
 
         std::lock_guard<std::mutex> lock(mtx_);
 
-        for (auto& sinks : sinks_) {
-            if (!(level & sinks.leveFilter_))
+        for (auto& os : outs_) {
+            if (!(level & os->levelFilter))
                 continue;
 
-            std::lock_guard<std::mutex> sinksLock(sinks.mtx_);
-            bool isConsole =  sinks.os_ == &std::cout || sinks.os_ == &std::cerr || sinks.os_ == &std::clog;
-            bool isColorize = isConsole && (sinks.outFlag_ & OUT_WITH_COLORIZE);
+            bool isConsole =  os->os == &std::cout || os->os == &std::cerr || os->os == &std::clog;
+            bool isColorize = isConsole && (os->outflag & OUT_WITH_COLORIZE);
 
             std::stringstream ss;
 
-            if (sinks.outFlag_ & OUT_WITH_TIMESTAMP) {
+            if (os->outflag & OUT_WITH_TIMESTAMP) {
                 ss << (isColorize ? "\033[0m\033[1;30m" : "");
                 ss << curtimeStr;
                 ss << (isColorize ? "\033[0m" : "");
                 ss << ' ';
             }
 
-            if (sinks.outFlag_ & OUT_WITH_LEVEL) {
+            if (os->outflag & OUT_WITH_LEVEL) {
                 if (isColorize) {
                     switch (level) {
                         case DEBUG:
@@ -361,16 +277,10 @@ public:
                 ss << ' ';
             }
 
-            ss << message;
+            ss << message << std::endl;
 
-            if (sinks.isOsCreatedByOwn_ && !sinks.os_) {
-                sinks.os_ = new std::ofstream(sinks.filename_, std::ios_base::app);
-                if (!dynamic_cast<std::ofstream*>(sinks.os_)->is_open())
-                    throw std::runtime_error("Failed to open the file: " + sinks.filename_);
-            }
-
-            if (sinks.os_)
-                *sinks.os_ << ss.str() << std::endl;
+            if (os->os)
+                *os->os << ss.str();
         }
     }
 
@@ -450,6 +360,36 @@ public:
     }
 
 private:
+    struct OutStream
+    {
+        OutStream(std::ostream *os, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL) :
+            os(os), outflag(outflag), levelFilter(levelFilter) {}
+
+        virtual ~OutStream() { os = nullptr; }
+
+        uchar outflag = OUT_FLAG_ALL;
+        uchar levelFilter = LEVEL_ALL;
+        std::ostream* os = nullptr;
+    };
+
+    struct FileOutStream final : public OutStream
+    {
+        FileOutStream(const std::string& filename, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL) :
+            OutStream(new std::ofstream(filename, std::ios_base::app), outflag, levelFilter)
+        {
+            if (!os || !dynamic_cast<std::ofstream*>(os)->is_open())
+                throw std::runtime_error("Failed to open the file: " + filename);
+        }
+
+        ~FileOutStream()
+        {
+            if (os) {
+                dynamic_cast<std::ofstream*>(os)->close();
+                delete os;
+            }
+        }
+    };
+
     static std::string currentTimeString_()
     {
         time_t time = 0;
@@ -464,7 +404,7 @@ private:
         return buffer;
     }
 
-    std::vector<Sinks> sinks_;
+    std::vector<OutStream*> outs_;
     std::mutex mtx_;
 };
 
@@ -474,47 +414,52 @@ private:
 namespace mlog
 {
 
-inline void addSinks(const Sinks& sinks)
+inline void addOs(std::ostream& os, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
 {
-    Logger::globalLogger().addSinks(sinks);
+    Logger::globalInstance().addOs(os, outflag, levelFilter);
 }
 
-inline void removeSinks(size_t index)
+inline void addOs(const std::string& filename, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
 {
-    Logger::globalLogger().removeSinks(index);
+    Logger::globalInstance().addOs(filename, outflag, levelFilter);
 }
 
-inline void removeLastSinks()
+inline void removeOs(size_t index)
 {
-    Logger::globalLogger().removeLastSinks();
+    Logger::globalInstance().removeOs(index);
 }
 
-inline Sinks& getSinks(size_t index)
+inline void removeLastOs()
 {
-    return Logger::globalLogger().getSinks(index);
+    Logger::globalInstance().removeLastOs();
 }
 
-inline Sinks& getLastSinks()
+inline void setOsAttribute(size_t index, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
 {
-    return Logger::globalLogger().getLastSinks();
+    Logger::globalInstance().setOsAttribute(index, outflag, levelFilter);
+}
+
+inline void setLastOsAttribute(uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
+{
+    Logger::globalInstance().setLastOsAttribute(outflag, levelFilter);
 }
 
 template<Level level, typename T>
 void log(const T& message)
 {
-    Logger::globalLogger().log<level>(message);
+    Logger::globalInstance().log<level>(message);
 }
 
 template<Level level, typename T>
 void log(const std::string& message, const T& arg)
 {
-    Logger::globalLogger().log<level>(message, arg);
+    Logger::globalInstance().log<level>(message, arg);
 }
 
 template<Level level, typename T, typename... Args>
 void log(const std::string& message, const T& arg, Args&&... args)
 {
-    Logger::globalLogger().log<level>(message, arg, std::forward<Args>(args)...);
+    Logger::globalInstance().log<level>(message, arg, std::forward<Args>(args)...);
 }
 
 template<typename T>
