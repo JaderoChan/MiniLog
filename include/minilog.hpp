@@ -117,7 +117,7 @@ class StopWatch
 
 public:
     StopWatch() :
-        startTime_{clock::now()} {}
+        startTime_(clock::now()) {}
 
     // Unit is millisecond.
     ullong elapsed() const
