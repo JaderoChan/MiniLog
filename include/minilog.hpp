@@ -76,10 +76,10 @@ enum OutFlag : uchar
     OUT_WITH_COLORIZE = 0x04
 };
 
-constexpr uchar LEVEL_ALL = 0xFF;
-constexpr uchar LEVEL_NONE = 0x00;
-constexpr uchar OUT_FLAG_ALL = 0xFF;
-constexpr uchar OUT_FLAG_NONE = 0x00;
+constexpr uchar LEVLE_FILTER_ALL = 0xFF;
+constexpr uchar LEVEL_FILTER_NONE = 0x00;
+constexpr uchar OUT_WITH_ALL = 0xFF;
+constexpr uchar OUT_WITH_NONE = 0x00;
 
 }
 
@@ -228,12 +228,12 @@ public:
 
     Logger() = default;
 
-    Logger(std::ostream& os, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
+    Logger(std::ostream& os, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
     {
         addOs(os, outflag, levelFilter);
     }
 
-    Logger(const std::string& filename, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
+    Logger(const std::string& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
     {
         addOs(filename, outflag, levelFilter);
     }
@@ -250,7 +250,7 @@ public:
 
     Logger& operator=(const Logger& other) = delete;
 
-    void addOs(std::ostream& os, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
+    void addOs(std::ostream& os, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
@@ -258,7 +258,7 @@ public:
         outs_.push_back(os_);
     }
 
-    void addOs(const std::string& filename, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
+    void addOs(const std::string& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
@@ -287,7 +287,7 @@ public:
         }
     }
 
-    void setOsAttribute(size_t index, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
+    void setOsAttribute(size_t index, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
@@ -298,7 +298,7 @@ public:
         outs_[index]->levelFilter = levelFilter;
     }
 
-    void setLastOsAttribute(uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
+    void setLastOsAttribute(uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
@@ -429,20 +429,20 @@ public:
 private:
     struct OutStream
     {
-        OutStream(std::ostream* os, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL) :
+        OutStream(std::ostream* os, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL) :
             os(os), outflag(outflag), levelFilter(levelFilter)
         {}
 
         virtual ~OutStream() { os = nullptr; }
 
-        uchar outflag = OUT_FLAG_ALL;
-        uchar levelFilter = LEVEL_ALL;
+        uchar outflag = OUT_WITH_ALL;
+        uchar levelFilter = LEVLE_FILTER_ALL;
         std::ostream* os = nullptr;
     };
 
     struct FileOutStream final : public OutStream
     {
-        FileOutStream(const std::string& filename, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL) :
+        FileOutStream(const std::string& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL) :
             OutStream(new std::ofstream(filename, std::ios_base::app), outflag, levelFilter)
         {
             if (!os || !dynamic_cast<std::ofstream*>(os)->is_open())
@@ -482,12 +482,12 @@ private:
 namespace mlog
 {
 
-inline void addOs(std::ostream& os, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
+inline void addOs(std::ostream& os, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
 {
     Logger::globalInstance().addOs(os, outflag, levelFilter);
 }
 
-inline void addOs(const std::string& filename, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
+inline void addOs(const std::string& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
 {
     Logger::globalInstance().addOs(filename, outflag, levelFilter);
 }
@@ -502,12 +502,12 @@ inline void removeLastOs()
     Logger::globalInstance().removeLastOs();
 }
 
-inline void setOsAttribute(size_t index, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
+inline void setOsAttribute(size_t index, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
 {
     Logger::globalInstance().setOsAttribute(index, outflag, levelFilter);
 }
 
-inline void setLastOsAttribute(uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL)
+inline void setLastOsAttribute(uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
 {
     Logger::globalInstance().setLastOsAttribute(outflag, levelFilter);
 }
