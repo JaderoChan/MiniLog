@@ -106,7 +106,7 @@ inline std::string levelToString(Level level)
 }
 
 template<typename T>
-std::string formats(const std::string& fmt, const T& arg)
+std::string format(const std::string& fmt, const T& arg)
 {
     std::stringstream ss;
 
@@ -148,7 +148,7 @@ std::string formats(const std::string& fmt, const T& arg)
 }
 
 template<typename T, typename... Args>
-std::string formats(const std::string& fmt, const T& arg, Args&&... args)
+std::string format(const std::string& fmt, const T& arg, Args&&... args)
 {
     std::stringstream ss;
 
@@ -178,7 +178,7 @@ std::string formats(const std::string& fmt, const T& arg, Args&&... args)
 
         if (window[0] == '{' && window[1] == '}') {
             ss << arg;
-            return ss.str() + formats(fmt.substr(i + 2), std::forward<Args>(args)...);
+            return ss.str() + format(fmt.substr(i + 2), std::forward<Args>(args)...);
         } else {
             ss << window[0];
             i += 1;
@@ -372,13 +372,13 @@ public:
     template<Level level, typename T>
     void log(const std::string& message, const T& arg)
     {
-        log<level>(formats(message, arg));
+        log<level>(format(message, arg));
     }
 
     template<Level level, typename T, typename... Args>
     void log(const std::string& message, const T& arg, Args&&... args)
     {
-        log<level>(formats(message, arg, std::forward<Args>(args)...));
+        log<level>(format(message, arg, std::forward<Args>(args)...));
     }
 
     template<typename T>
