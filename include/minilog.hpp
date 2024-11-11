@@ -105,6 +105,90 @@ inline std::string levelToString(Level level)
     }
 }
 
+template<typename T>
+std::string formats(const std::string& fmt, const T& arg)
+{
+    std::stringstream ss;
+
+    if (fmt.size() < 4) {
+        size_t pos = fmt.find("{}");
+        if (pos == std::string::npos)
+            return fmt;
+
+        ss << fmt.substr(0, pos);
+        ss << arg;
+
+        return ss.str() + fmt.substr(pos + 2);
+    }
+
+    std::string window(4, '\0');
+    for (size_t i = 0; i < fmt.size();) {
+        window[0] = fmt[i];
+        window[1] = i < fmt.size() - 1 ? fmt[i + 1] : '\0';
+        window[2] = i < fmt.size() - 2 ? fmt[i + 2] : '\0';
+        window[3] = i < fmt.size() - 3 ? fmt[i + 3] : '\0';
+
+        if (window == "{{}}") {
+            ss << "{}";
+            i += 4;
+            continue;
+        }
+
+        if (window[0] == '{' && window[1] == '}') {
+            ss << arg;
+            return ss.str() + fmt.substr(i + 2);
+        } else {
+            ss << window[0];
+            i += 1;
+            continue;
+        }
+    }
+
+    return ss.str();
+}
+
+template<typename T, typename... Args>
+std::string formats(const std::string& fmt, const T& arg, Args&&... args)
+{
+    std::stringstream ss;
+
+    if (fmt.size() < 4) {
+        size_t pos = fmt.find("{}");
+        if (pos == std::string::npos)
+            return fmt;
+
+        ss << fmt.substr(0, pos);
+        ss << arg;
+
+        return ss.str() + fmt.substr(pos + 2);
+    }
+
+    std::string window(4, '\0');
+    for (size_t i = 0; i < fmt.size();) {
+        window[0] = fmt[i];
+        window[1] = i < fmt.size() - 1 ? fmt[i + 1] : '\0';
+        window[2] = i < fmt.size() - 2 ? fmt[i + 2] : '\0';
+        window[3] = i < fmt.size() - 3 ? fmt[i + 3] : '\0';
+
+        if (window == "{{}}") {
+            ss << "{}";
+            i += 4;
+            continue;
+        }
+
+        if (window[0] == '{' && window[1] == '}') {
+            ss << arg;
+            return ss.str() + formats(fmt.substr(i + 2), std::forward<Args>(args)...);
+        } else {
+            ss << window[0];
+            i += 1;
+            continue;
+        }
+    }
+
+    return ss.str();
+}
+
 }
 
 // Classes.
@@ -117,9 +201,10 @@ class StopWatch
 
 public:
     StopWatch() :
-        startTime_(clock::now()) {}
+        startTime_(clock::now())
+    {}
 
-    // Unit is millisecond.
+// Unit is millisecond.
     ullong elapsed() const
     {
         return std::chrono::duration_cast<std::chrono::milliseconds>(clock::now() - startTime_).count();
@@ -236,7 +321,7 @@ public:
             if (!(level & os->levelFilter))
                 continue;
 
-            bool isConsole =  os->os == &std::cout || os->os == &std::cerr || os->os == &std::clog;
+            bool isConsole = os->os == &std::cout || os->os == &std::cerr || os->os == &std::clog;
             bool isColorize = isConsole && (os->outflag & OUT_WITH_COLORIZE);
 
             std::stringstream ss;
@@ -287,31 +372,13 @@ public:
     template<Level level, typename T>
     void log(const std::string& message, const T& arg)
     {
-        size_t pos = message.find("{}");
-        if (pos == std::string::npos) {
-            log<level>(message);
-        } else {
-            std::stringstream ss;
-            ss << message.substr(0, pos);
-            ss << arg;
-            ss << message.substr(pos + 2);
-            log<level>(ss.str());
-        }
+        log<level>(formats(message, arg));
     }
 
     template<Level level, typename T, typename... Args>
     void log(const std::string& message, const T& arg, Args&&... args)
     {
-        size_t pos = message.find("{}");
-        if (pos == std::string::npos) {
-            log<level>(message);
-        } else {
-            std::stringstream ss;
-            ss << message.substr(0, pos);
-            ss << arg;
-            ss << message.substr(pos + 2);
-            log<level>(ss.str(), std::forward<Args>(args)...);
-        }
+        log<level>(formats(message, arg, std::forward<Args>(args)...));
     }
 
     template<typename T>
@@ -328,7 +395,7 @@ public:
 
     template<typename T, typename... Args>
     void info(const std::string& message, const T& arg, Args&&... args)
-    { 
+    {
         log<INFO>(message, arg, std::forward<Args>(args)...);
     }
 
@@ -362,8 +429,9 @@ public:
 private:
     struct OutStream
     {
-        OutStream(std::ostream *os, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL) :
-            os(os), outflag(outflag), levelFilter(levelFilter) {}
+        OutStream(std::ostream* os, uchar outflag = OUT_FLAG_ALL, uchar levelFilter = LEVEL_ALL) :
+            os(os), outflag(outflag), levelFilter(levelFilter)
+        {}
 
         virtual ~OutStream() { os = nullptr; }
 
