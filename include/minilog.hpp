@@ -58,11 +58,11 @@ using ullong = unsigned long long;
 
 enum Level : uchar
 {
-    DEBUG = 0x01,
-    INFO = 0x02,
-    WARN = 0x04,
-    ERROR = 0x08,
-    FATAL = 0x10
+    LVL_DEBUG = 0x01,
+    LVL_INFO = 0x02,
+    LVL_WARN = 0x04,
+    LVL_ERROR = 0x08,
+    LVL_FATAL = 0x10
 };
 
 enum OutFlag : uchar
@@ -90,15 +90,15 @@ namespace mlog
 inline std::string levelToString(Level level)
 {
     switch (level) {
-        case DEBUG:
+        case LVL_DEBUG:
             return "[Debug]";
-        case INFO:
+        case LVL_INFO:
             return "[Info]";
-        case WARN:
+        case LVL_WARN:
             return "[Warn]";
-        case ERROR:
+        case LVL_ERROR:
             return "[Error]";
-        case FATAL:
+        case LVL_FATAL:
             return "[Fatal]";
         default:
             return "";
@@ -336,19 +336,19 @@ public:
             if (os->outflag & OUT_WITH_LEVEL) {
                 if (isColorize) {
                     switch (level) {
-                        case DEBUG:
+                        case LVL_DEBUG:
                             ss << "\033[0m\033[34m";
                             break;
-                        case INFO:
+                        case LVL_INFO:
                             ss << "\033[0m\033[32m";
                             break;
-                        case WARN:
+                        case LVL_WARN:
                             ss << "\033[0m\033[33m";
                             break;
-                        case ERROR:
+                        case LVL_ERROR:
                             ss << "\033[0m\033[31m";
                             break;
-                        case FATAL:
+                        case LVL_FATAL:
                             ss << "\033[0m\033[35m";
                             break;
                         default:
@@ -382,48 +382,48 @@ public:
     }
 
     template<typename T>
-    void debug(const T& message) { log<DEBUG>(message); }
+    void debug(const T& message) { log<LVL_DEBUG>(message); }
 
     template<typename T, typename... Args>
     void debug(const std::string& message, const T& arg, Args&&... args)
     {
-        log<DEBUG>(message, arg, std::forward<Args>(args)...);
+        log<LVL_DEBUG>(message, arg, std::forward<Args>(args)...);
     }
 
     template<typename T>
-    void info(const T& message) { log<INFO>(message); }
+    void info(const T& message) { log<LVL_INFO>(message); }
 
     template<typename T, typename... Args>
     void info(const std::string& message, const T& arg, Args&&... args)
     {
-        log<INFO>(message, arg, std::forward<Args>(args)...);
+        log<LVL_INFO>(message, arg, std::forward<Args>(args)...);
     }
 
     template<typename T>
-    void warn(const T& message) { log<WARN>(message); }
+    void warn(const T& message) { log<LVL_WARN>(message); }
 
     template<typename T, typename... Args>
     void warn(const std::string& message, const T& arg, Args&&... args)
     {
-        log<WARN>(message, arg, std::forward<Args>(args)...);
+        log<LVL_WARN>(message, arg, std::forward<Args>(args)...);
     }
 
     template<typename T>
-    void error(const T& message) { log<ERROR>(message); }
+    void error(const T& message) { log<LVL_ERROR>(message); }
 
     template<typename T, typename... Args>
     void error(const std::string& message, const T& arg, Args&&... args)
     {
-        log<ERROR>(message, arg, std::forward<Args>(args)...);
+        log<LVL_ERROR>(message, arg, std::forward<Args>(args)...);
     }
 
     template<typename T>
-    void fatal(const T& message) { log<FATAL>(message); }
+    void fatal(const T& message) { log<LVL_FATAL>(message); }
 
     template<typename T, typename... Args>
     void fatal(const std::string& message, const T& arg, Args&&... args)
     {
-        log<FATAL>(message, arg, std::forward<Args>(args)...);
+        log<LVL_FATAL>(message, arg, std::forward<Args>(args)...);
     }
 
 private:
@@ -531,48 +531,48 @@ void log(const std::string& message, const T& arg, Args&&... args)
 }
 
 template<typename T>
-void debug(const T& message) { log<DEBUG>(message); }
+void debug(const T& message) { log<LVL_DEBUG>(message); }
 
 template<typename T, typename... Args>
 void debug(const std::string& message, const T& arg, Args&&... args)
 {
-    log<DEBUG>(message, arg, std::forward<Args>(args)...);
+    log<LVL_DEBUG>(message, arg, std::forward<Args>(args)...);
 }
 
 template<typename T>
-void info(const T& message) { log<INFO>(message); }
+void info(const T& message) { log<LVL_INFO>(message); }
 
 template<typename T, typename... Args>
 void info(const std::string& message, const T& arg, Args&&... args)
 {
-    log<INFO>(message, arg, std::forward<Args>(args)...);
+    log<LVL_INFO>(message, arg, std::forward<Args>(args)...);
 }
 
 template<typename T>
-void warn(const T& message) { log<WARN>(message); }
+void warn(const T& message) { log<LVL_WARN>(message); }
 
 template<typename T, typename... Args>
 void warn(const std::string& message, const T& arg, Args&&... args)
 {
-    log<WARN>(message, arg, std::forward<Args>(args)...);
+    log<LVL_WARN>(message, arg, std::forward<Args>(args)...);
 }
 
 template<typename T>
-void error(const T& message) { log<ERROR>(message); }
+void error(const T& message) { log<LVL_ERROR>(message); }
 
 template<typename T, typename... Args>
 void error(const std::string& message, const T& arg, Args&&... args)
 {
-    log<ERROR>(message, arg, std::forward<Args>(args)...);
+    log<LVL_ERROR>(message, arg, std::forward<Args>(args)...);
 }
 
 template<typename T>
-void fatal(const T& message) { log<FATAL>(message); }
+void fatal(const T& message) { log<LVL_FATAL>(message); }
 
 template<typename T, typename... Args>
 void fatal(const std::string& message, const T& arg, Args&&... args)
 {
-    log<FATAL>(message, arg, std::forward<Args>(args)...);
+    log<LVL_FATAL>(message, arg, std::forward<Args>(args)...);
 }
 
 }
