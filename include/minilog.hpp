@@ -56,6 +56,8 @@ using uint = unsigned int;
 using llong = long long;
 using ullong = unsigned long long;
 
+using String = std::string;
+
 enum Level : uchar
 {
     LVL_DEBUG = 0x01,
@@ -87,7 +89,7 @@ constexpr uchar OUT_WITH_NONE = 0x00;
 namespace mlog
 {
 
-inline std::string levelToString(Level level)
+inline String levelToString(Level level)
 {
     switch (level) {
         case LVL_DEBUG:
@@ -106,13 +108,13 @@ inline std::string levelToString(Level level)
 }
 
 template<typename T>
-std::string format(const std::string& fmt, const T& arg)
+String format(const String& fmt, const T& arg)
 {
     std::stringstream ss;
 
     if (fmt.size() < 4) {
         size_t pos = fmt.find("{}");
-        if (pos == std::string::npos)
+        if (pos == String::npos)
             return fmt;
 
         ss << fmt.substr(0, pos);
@@ -121,7 +123,7 @@ std::string format(const std::string& fmt, const T& arg)
         return ss.str() + fmt.substr(pos + 2);
     }
 
-    std::string window(4, '\0');
+    String window(4, '\0');
     for (size_t i = 0; i < fmt.size();) {
         window[0] = fmt[i];
         window[1] = i < fmt.size() - 1 ? fmt[i + 1] : '\0';
@@ -148,13 +150,13 @@ std::string format(const std::string& fmt, const T& arg)
 }
 
 template<typename T, typename... Args>
-std::string format(const std::string& fmt, const T& arg, Args&&... args)
+String format(const String& fmt, const T& arg, Args&&... args)
 {
     std::stringstream ss;
 
     if (fmt.size() < 4) {
         size_t pos = fmt.find("{}");
-        if (pos == std::string::npos)
+        if (pos == String::npos)
             return fmt;
 
         ss << fmt.substr(0, pos);
@@ -163,7 +165,7 @@ std::string format(const std::string& fmt, const T& arg, Args&&... args)
         return ss.str() + fmt.substr(pos + 2);
     }
 
-    std::string window(4, '\0');
+    String window(4, '\0');
     for (size_t i = 0; i < fmt.size();) {
         window[0] = fmt[i];
         window[1] = i < fmt.size() - 1 ? fmt[i + 1] : '\0';
@@ -195,25 +197,28 @@ std::string format(const std::string& fmt, const T& arg, Args&&... args)
 namespace mlog
 {
 
+namespace chr = std::chrono;
+
 class StopWatch
 {
-    using clock = std::chrono::steady_clock;
+    
+    using clock = chr::steady_clock;
 
 public:
     StopWatch() :
         startTime_(clock::now())
     {}
 
-// Unit is millisecond.
+    // Unit is millisecond.
     ullong elapsed() const
     {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(clock::now() - startTime_).count();
+        return chr::duration_cast<chr::milliseconds>(clock::now() - startTime_).count();
     }
 
     void reset() { startTime_ = clock::now(); }
 
 private:
-    std::chrono::time_point<clock> startTime_;
+    chr::time_point<clock> startTime_;
 };
 
 class Logger
@@ -233,7 +238,7 @@ public:
         addOs(os, outflag, levelFilter);
     }
 
-    Logger(const std::string& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+    Logger(const String& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
     {
         addOs(filename, outflag, levelFilter);
     }
@@ -258,7 +263,7 @@ public:
         outs_.push_back(os_);
     }
 
-    void addOs(const std::string& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+    void addOs(const String& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
@@ -312,8 +317,8 @@ public:
     template<Level level, typename T>
     void log(const T& message)
     {
-        std::string curtimeStr = currentTimeString_();
-        std::string levelStr = levelToString(level);
+        String curtimeStr = currentTimeString_();
+        String levelStr = levelToString(level);
 
         std::lock_guard<std::mutex> lock(mtx_);
 
@@ -370,13 +375,13 @@ public:
     }
 
     template<Level level, typename T>
-    void log(const std::string& message, const T& arg)
+    void log(const String& message, const T& arg)
     {
         log<level>(format(message, arg));
     }
 
     template<Level level, typename T, typename... Args>
-    void log(const std::string& message, const T& arg, Args&&... args)
+    void log(const String& message, const T& arg, Args&&... args)
     {
         log<level>(format(message, arg, std::forward<Args>(args)...));
     }
@@ -385,7 +390,7 @@ public:
     void debug(const T& message) { log<LVL_DEBUG>(message); }
 
     template<typename T, typename... Args>
-    void debug(const std::string& message, const T& arg, Args&&... args)
+    void debug(const String& message, const T& arg, Args&&... args)
     {
         log<LVL_DEBUG>(message, arg, std::forward<Args>(args)...);
     }
@@ -394,7 +399,7 @@ public:
     void info(const T& message) { log<LVL_INFO>(message); }
 
     template<typename T, typename... Args>
-    void info(const std::string& message, const T& arg, Args&&... args)
+    void info(const String& message, const T& arg, Args&&... args)
     {
         log<LVL_INFO>(message, arg, std::forward<Args>(args)...);
     }
@@ -403,7 +408,7 @@ public:
     void warn(const T& message) { log<LVL_WARN>(message); }
 
     template<typename T, typename... Args>
-    void warn(const std::string& message, const T& arg, Args&&... args)
+    void warn(const String& message, const T& arg, Args&&... args)
     {
         log<LVL_WARN>(message, arg, std::forward<Args>(args)...);
     }
@@ -412,7 +417,7 @@ public:
     void error(const T& message) { log<LVL_ERROR>(message); }
 
     template<typename T, typename... Args>
-    void error(const std::string& message, const T& arg, Args&&... args)
+    void error(const String& message, const T& arg, Args&&... args)
     {
         log<LVL_ERROR>(message, arg, std::forward<Args>(args)...);
     }
@@ -421,7 +426,7 @@ public:
     void fatal(const T& message) { log<LVL_FATAL>(message); }
 
     template<typename T, typename... Args>
-    void fatal(const std::string& message, const T& arg, Args&&... args)
+    void fatal(const String& message, const T& arg, Args&&... args)
     {
         log<LVL_FATAL>(message, arg, std::forward<Args>(args)...);
     }
@@ -442,7 +447,7 @@ private:
 
     struct FileOutStream final : public OutStream
     {
-        FileOutStream(const std::string& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL) :
+        FileOutStream(const String& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL) :
             OutStream(new std::ofstream(filename, std::ios_base::app), outflag, levelFilter)
         {
             if (!os || !dynamic_cast<std::ofstream*>(os)->is_open())
@@ -458,7 +463,7 @@ private:
         }
     };
 
-    static std::string currentTimeString_()
+    static String currentTimeString_()
     {
         time_t time = 0;
         ::time(&time);
@@ -487,7 +492,7 @@ inline void addOs(std::ostream& os, uchar outflag = OUT_WITH_ALL, uchar levelFil
     Logger::globalInstance().addOs(os, outflag, levelFilter);
 }
 
-inline void addOs(const std::string& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+inline void addOs(const String& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
 {
     Logger::globalInstance().addOs(filename, outflag, levelFilter);
 }
@@ -519,13 +524,13 @@ void log(const T& message)
 }
 
 template<Level level, typename T>
-void log(const std::string& message, const T& arg)
+void log(const String& message, const T& arg)
 {
     Logger::globalInstance().log<level>(message, arg);
 }
 
 template<Level level, typename T, typename... Args>
-void log(const std::string& message, const T& arg, Args&&... args)
+void log(const String& message, const T& arg, Args&&... args)
 {
     Logger::globalInstance().log<level>(message, arg, std::forward<Args>(args)...);
 }
@@ -534,7 +539,7 @@ template<typename T>
 void debug(const T& message) { log<LVL_DEBUG>(message); }
 
 template<typename T, typename... Args>
-void debug(const std::string& message, const T& arg, Args&&... args)
+void debug(const String& message, const T& arg, Args&&... args)
 {
     log<LVL_DEBUG>(message, arg, std::forward<Args>(args)...);
 }
@@ -543,7 +548,7 @@ template<typename T>
 void info(const T& message) { log<LVL_INFO>(message); }
 
 template<typename T, typename... Args>
-void info(const std::string& message, const T& arg, Args&&... args)
+void info(const String& message, const T& arg, Args&&... args)
 {
     log<LVL_INFO>(message, arg, std::forward<Args>(args)...);
 }
@@ -552,7 +557,7 @@ template<typename T>
 void warn(const T& message) { log<LVL_WARN>(message); }
 
 template<typename T, typename... Args>
-void warn(const std::string& message, const T& arg, Args&&... args)
+void warn(const String& message, const T& arg, Args&&... args)
 {
     log<LVL_WARN>(message, arg, std::forward<Args>(args)...);
 }
@@ -561,7 +566,7 @@ template<typename T>
 void error(const T& message) { log<LVL_ERROR>(message); }
 
 template<typename T, typename... Args>
-void error(const std::string& message, const T& arg, Args&&... args)
+void error(const String& message, const T& arg, Args&&... args)
 {
     log<LVL_ERROR>(message, arg, std::forward<Args>(args)...);
 }
@@ -570,7 +575,7 @@ template<typename T>
 void fatal(const T& message) { log<LVL_FATAL>(message); }
 
 template<typename T, typename... Args>
-void fatal(const std::string& message, const T& arg, Args&&... args)
+void fatal(const String& message, const T& arg, Args&&... args)
 {
     log<LVL_FATAL>(message, arg, std::forward<Args>(args)...);
 }
