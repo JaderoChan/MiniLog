@@ -83,7 +83,7 @@ constexpr uchar LEVEL_FILTER_NONE = 0x00;
 constexpr uchar OUT_WITH_ALL = 0xFF;
 constexpr uchar OUT_WITH_NONE = 0x00;
 
-}
+} // namespace mlog
 
 // Aux functions.
 namespace mlog
@@ -107,7 +107,7 @@ inline String levelToString(Level level)
     }
 }
 
-template<typename T>
+template <typename T>
 String format(const String& fmt, const T& arg)
 {
     std::stringstream ss;
@@ -149,7 +149,7 @@ String format(const String& fmt, const T& arg)
     return ss.str();
 }
 
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 String format(const String& fmt, const T& arg, Args&&... args)
 {
     std::stringstream ss;
@@ -191,7 +191,7 @@ String format(const String& fmt, const T& arg, Args&&... args)
     return ss.str();
 }
 
-}
+} // namespace mlog
 
 // Classes.
 namespace mlog
@@ -201,19 +201,13 @@ namespace chr = std::chrono;
 
 class StopWatch
 {
-    
     using clock = chr::steady_clock;
 
 public:
-    StopWatch() :
-        startTime_(clock::now())
-    {}
+    StopWatch() : startTime_(clock::now()) {}
 
     // Unit is millisecond.
-    ullong elapsed() const
-    {
-        return chr::duration_cast<chr::milliseconds>(clock::now() - startTime_).count();
-    }
+    ullong elapsed() const { return chr::duration_cast<chr::milliseconds>(clock::now() - startTime_).count(); }
 
     void reset() { startTime_ = clock::now(); }
 
@@ -314,7 +308,7 @@ public:
         outs_.back()->levelFilter = levelFilter;
     }
 
-    template<Level level, typename T>
+    template <Level level, typename T>
     void log(const T& message)
     {
         String curtimeStr = currentTimeString_();
@@ -374,58 +368,55 @@ public:
         }
     }
 
-    template<Level level, typename T>
-    void log(const String& message, const T& arg)
-    {
-        log<level>(format(message, arg));
-    }
+    template <Level level, typename T>
+    void log(const String& message, const T& arg) { log<level>(format(message, arg)); }
 
-    template<Level level, typename T, typename... Args>
+    template <Level level, typename T, typename... Args>
     void log(const String& message, const T& arg, Args&&... args)
     {
         log<level>(format(message, arg, std::forward<Args>(args)...));
     }
 
-    template<typename T>
+    template <typename T>
     void debug(const T& message) { log<LVL_DEBUG>(message); }
 
-    template<typename T, typename... Args>
+    template <typename T, typename... Args>
     void debug(const String& message, const T& arg, Args&&... args)
     {
         log<LVL_DEBUG>(message, arg, std::forward<Args>(args)...);
     }
 
-    template<typename T>
+    template <typename T>
     void info(const T& message) { log<LVL_INFO>(message); }
 
-    template<typename T, typename... Args>
+    template <typename T, typename... Args>
     void info(const String& message, const T& arg, Args&&... args)
     {
         log<LVL_INFO>(message, arg, std::forward<Args>(args)...);
     }
 
-    template<typename T>
+    template <typename T>
     void warn(const T& message) { log<LVL_WARN>(message); }
 
-    template<typename T, typename... Args>
+    template <typename T, typename... Args>
     void warn(const String& message, const T& arg, Args&&... args)
     {
         log<LVL_WARN>(message, arg, std::forward<Args>(args)...);
     }
 
-    template<typename T>
+    template <typename T>
     void error(const T& message) { log<LVL_ERROR>(message); }
 
-    template<typename T, typename... Args>
+    template <typename T, typename... Args>
     void error(const String& message, const T& arg, Args&&... args)
     {
         log<LVL_ERROR>(message, arg, std::forward<Args>(args)...);
     }
 
-    template<typename T>
+    template <typename T>
     void fatal(const T& message) { log<LVL_FATAL>(message); }
 
-    template<typename T, typename... Args>
+    template <typename T, typename... Args>
     void fatal(const String& message, const T& arg, Args&&... args)
     {
         log<LVL_FATAL>(message, arg, std::forward<Args>(args)...);
@@ -517,69 +508,63 @@ inline void setLastOsAttribute(uchar outflag = OUT_WITH_ALL, uchar levelFilter =
     Logger::globalInstance().setLastOsAttribute(outflag, levelFilter);
 }
 
-template<Level level, typename T>
-void log(const T& message)
-{
-    Logger::globalInstance().log<level>(message);
-}
+template <Level level, typename T>
+void log(const T& message) { Logger::globalInstance().log<level>(message); }
 
-template<Level level, typename T>
-void log(const String& message, const T& arg)
-{
-    Logger::globalInstance().log<level>(message, arg);
-}
+template <Level level, typename T>
+void log(const String& message, const T& arg) { Logger::globalInstance().log<level>(message, arg); }
 
-template<Level level, typename T, typename... Args>
+template <Level level, typename T, typename... Args>
 void log(const String& message, const T& arg, Args&&... args)
 {
     Logger::globalInstance().log<level>(message, arg, std::forward<Args>(args)...);
 }
 
-template<typename T>
+template <typename T>
 void debug(const T& message) { log<LVL_DEBUG>(message); }
 
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 void debug(const String& message, const T& arg, Args&&... args)
 {
     log<LVL_DEBUG>(message, arg, std::forward<Args>(args)...);
 }
 
-template<typename T>
+template <typename T>
 void info(const T& message) { log<LVL_INFO>(message); }
 
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 void info(const String& message, const T& arg, Args&&... args)
 {
     log<LVL_INFO>(message, arg, std::forward<Args>(args)...);
 }
 
-template<typename T>
+template <typename T>
 void warn(const T& message) { log<LVL_WARN>(message); }
 
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 void warn(const String& message, const T& arg, Args&&... args)
 {
     log<LVL_WARN>(message, arg, std::forward<Args>(args)...);
 }
 
-template<typename T>
+template <typename T>
 void error(const T& message) { log<LVL_ERROR>(message); }
 
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 void error(const String& message, const T& arg, Args&&... args)
 {
     log<LVL_ERROR>(message, arg, std::forward<Args>(args)...);
 }
 
-template<typename T>
+template <typename T>
 void fatal(const T& message) { log<LVL_FATAL>(message); }
 
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 void fatal(const String& message, const T& arg, Args&&... args)
 {
     log<LVL_FATAL>(message, arg, std::forward<Args>(args)...);
 }
 
-}
+} // namespace mlog
 
 #endif // !MINILOG_HPP
