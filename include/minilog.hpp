@@ -33,7 +33,7 @@
 #include <chrono>   // For #StopWatch
 #include <mutex>
 #include <string>
-#include <vector>
+#include <unordered_map>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -227,85 +227,78 @@ public:
 
     Logger() = default;
 
-    Logger(std::ostream& os, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+    Logger(const String nameid, std::ostream& os, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
     {
-        addOs(os, outflag, levelFilter);
+        addOs(nameid, os, outflag, levelFilter);
     }
 
-    Logger(const String& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+    Logger(const String nameid, const String& filename,
+           uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
     {
-        addOs(filename, outflag, levelFilter);
+        addOs(nameid, filename, outflag, levelFilter);
     }
 
     ~Logger()
     {
-        for (auto& var : outs_) {
-            delete var;
-            var = nullptr;
-        }
+        clearOs();
     }
 
     Logger(const Logger& other) = delete;
 
     Logger& operator=(const Logger& other) = delete;
 
-    void addOs(std::ostream& os, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+    void addOs(const String& nameid, std::ostream& os,
+               uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
+
+        if (outs_.find(nameid)!= outs_.end())
+            throw std::runtime_error("The nameid is already exist.");
 
         OutStream* os_ = new OutStream(&os, outflag, levelFilter);
-        outs_.push_back(os_);
+        outs_.insert({ nameid, os_ });
     }
 
-    void addOs(const String& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+    void addOs(const String& nameid, const String& filename,
+               uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
+
+        if (outs_.find(nameid)!= outs_.end())
+            throw std::runtime_error("The nameid is already exist.");
 
         OutStream* os_ = new FileOutStream(filename, outflag, levelFilter);
-        outs_.push_back(os_);
+        outs_.insert({ nameid, os_} );
     }
 
-    void removeOs(size_t index)
+    void removeOs(const String& nameid)
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
-        if (index >= outs_.size())
-            throw std::runtime_error("The index is out range.");
-
-        delete outs_.at(index);
-        outs_.erase(outs_.begin() + index);
+        outs_.erase(nameid);
     }
 
-    void removeLastOs()
+    void clearOs()
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
-        if (!outs_.empty()) {
-            delete outs_.back();
-            outs_.pop_back();
+        for (auto& var : outs_) {
+            delete var.second;
+            var.second = nullptr;
         }
+
+        outs_.clear();
     }
 
-    void setOsAttribute(size_t index, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+    void setOsAttribute(const String& nameid, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
-        if (index >= outs_.size())
-            throw std::runtime_error("The index is out range.");
+        if (outs_.find(nameid) == outs_.end())
+            throw std::runtime_error("The nameid is not exist.");
 
-        outs_[index]->outflag = outflag;
-        outs_[index]->levelFilter = levelFilter;
-    }
-
-    void setLastOsAttribute(uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
-    {
-        std::lock_guard<std::mutex> lock(mtx_);
-
-        if (outs_.empty())
-            throw std::runtime_error("No specify member.");
-
-        outs_.back()->outflag = outflag;
-        outs_.back()->levelFilter = levelFilter;
+        outs_[nameid]->outflag = outflag;
+        outs_[nameid]->levelFilter = levelFilter;
     }
 
     template <Level level, typename T>
@@ -468,7 +461,7 @@ private:
         return buffer;
     }
 
-    std::vector<OutStream*> outs_;
+    std::unordered_map<String, OutStream*> outs_;
     std::mutex mtx_;
 };
 
@@ -478,34 +471,31 @@ private:
 namespace mlog
 {
 
-inline void addOs(std::ostream& os, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+inline void addOs(const String& nameid, std::ostream& os,
+                  uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
 {
-    Logger::globalInstance().addOs(os, outflag, levelFilter);
+    Logger::globalInstance().addOs(nameid, os, outflag, levelFilter);
 }
 
-inline void addOs(const String& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+inline void addOs(const String& nameid, const String& filename,
+                  uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
 {
-    Logger::globalInstance().addOs(filename, outflag, levelFilter);
+    Logger::globalInstance().addOs(nameid, filename, outflag, levelFilter);
 }
 
-inline void removeOs(size_t index)
+inline void removeOs(const String& nameid)
 {
-    Logger::globalInstance().removeOs(index);
+    Logger::globalInstance().removeOs(nameid);
 }
 
-inline void removeLastOs()
+inline void clearOs()
 {
-    Logger::globalInstance().removeLastOs();
+    Logger::globalInstance().clearOs();
 }
 
-inline void setOsAttribute(size_t index, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+inline void setOsAttribute(const String& nameid, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
 {
-    Logger::globalInstance().setOsAttribute(index, outflag, levelFilter);
-}
-
-inline void setLastOsAttribute(uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
-{
-    Logger::globalInstance().setLastOsAttribute(outflag, levelFilter);
+    Logger::globalInstance().setOsAttribute(nameid, outflag, levelFilter);
 }
 
 template <Level level, typename T>
