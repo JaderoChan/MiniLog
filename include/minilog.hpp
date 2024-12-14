@@ -309,7 +309,9 @@ public:
 
         std::lock_guard<std::mutex> lock(mtx_);
 
-        for (auto& os : outs_) {
+        for (auto& var : outs_) {
+            OutStream* os = var.second;
+
             if (!(level & os->levelFilter))
                 continue;
 
