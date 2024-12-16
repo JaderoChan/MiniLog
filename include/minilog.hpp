@@ -249,7 +249,7 @@ public:
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
-        if (outs_.find(nameid)!= outs_.end())
+        if (outs_.find(nameid) != outs_.end())
             throw std::runtime_error("The nameid is already exist.");
 
         OutStream* os_ = new OutStream(&os, outflag, levelFilter);
@@ -261,7 +261,7 @@ public:
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
-        if (outs_.find(nameid)!= outs_.end())
+        if (outs_.find(nameid) != outs_.end())
             throw std::runtime_error("The nameid is already exist.");
 
         OutStream* os_ = new FileOutStream(filename, outflag, levelFilter);
@@ -271,6 +271,10 @@ public:
     void removeOs(const String& nameid)
     {
         std::lock_guard<std::mutex> lock(mtx_);
+
+        delete outs_[nameid];
+        outs_[nameid] = nullptr;
+
         outs_.erase(nameid);
     }
 
