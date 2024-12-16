@@ -238,10 +238,7 @@ public:
         addOs(nameid, filename, outflag, levelFilter);
     }
 
-    ~Logger()
-    {
-        clearOs();
-    }
+    ~Logger() { clearOs(); }
 
     Logger(const Logger& other) = delete;
 
@@ -274,7 +271,6 @@ public:
     void removeOs(const String& nameid)
     {
         std::lock_guard<std::mutex> lock(mtx_);
-
         outs_.erase(nameid);
     }
 
