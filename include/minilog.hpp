@@ -28,16 +28,16 @@
 #ifndef MINILOG_HPP
 #define MINILOG_HPP
 
-#include <cstddef>  // size_t
-#include <ctime>    // time_t, tm, time(), localtime_s(), strftime()
-#include <chrono>   // For #StopWatch
-#include <mutex>
-#include <string>
-#include <unordered_map>
-#include <iostream>
-#include <sstream>
-#include <fstream>
-#include <stdexcept>
+#include <cstddef>          // size_t
+#include <ctime>            // time_t, tm, time(), localtime_s(), strftime()
+#include <chrono>           // chrono For #StopWatch
+#include <mutex>            // mutex, lock_guard For thread-safe
+#include <string>           // string
+#include <unordered_map>    // unordered_map
+#include <iostream>         // ostream, cout, cerr, clog, endl
+#include <sstream>          // stringstream
+#include <fstream>          // ofstream
+#include <stdexcept>        // runtime_error
 
 // Mini Log namespace.
 namespace mlog
@@ -51,37 +51,37 @@ namespace mlog
 namespace mlog
 {
 
-using uchar = unsigned char;
-using uint = unsigned int;
-using llong = long long;
-using ullong = unsigned long long;
+using uchar     = unsigned char;
+using uint      = unsigned int;
+using llong     = long long;
+using ullong    = unsigned long long;
 
-using String = std::string;
+using String    = std::string;
 
 enum Level : uchar
 {
-    LVL_DEBUG = 0x01,
-    LVL_INFO = 0x02,
-    LVL_WARN = 0x04,
-    LVL_ERROR = 0x08,
-    LVL_FATAL = 0x10
+    LVL_DEBUG   = 0x01,
+    LVL_INFO    = 0x02,
+    LVL_WARN    = 0x04,
+    LVL_ERROR   = 0x08,
+    LVL_FATAL   = 0x10
 };
 
 enum OutFlag : uchar
 {
     // Whether the output attach log level.
-    OUT_WITH_LEVEL = 0x01,
+    OUT_WITH_LEVEL      = 0x01,
     // Whether the output attach timestamp.
-    OUT_WITH_TIMESTAMP = 0x02,
+    OUT_WITH_TIMESTAMP  = 0x02,
     // Whether colorize the output.
     // Just useful for std::cout, std::cerr, std::clog.
-    OUT_WITH_COLORIZE = 0x04
+    OUT_WITH_COLORIZE   = 0x04
 };
 
-constexpr uchar LEVLE_FILTER_ALL = 0xFF;
-constexpr uchar LEVEL_FILTER_NONE = 0x00;
-constexpr uchar OUT_WITH_ALL = 0xFF;
-constexpr uchar OUT_WITH_NONE = 0x00;
+constexpr uchar LEVLE_FILTER_ALL    = 0xFF;
+constexpr uchar LEVEL_FILTER_NONE   = 0x00;
+constexpr uchar OUT_WITH_ALL        = 0xFF;
+constexpr uchar OUT_WITH_NONE       = 0x00;
 
 } // namespace mlog
 
@@ -426,9 +426,9 @@ private:
 
         virtual ~OutStream() { os = nullptr; }
 
-        uchar outflag = OUT_WITH_ALL;
-        uchar levelFilter = LEVLE_FILTER_ALL;
-        std::ostream* os = nullptr;
+        uchar outflag       = OUT_WITH_ALL;
+        uchar levelFilter   = LEVLE_FILTER_ALL;
+        std::ostream* os    = nullptr;
     };
 
     struct FileOutStream final : public OutStream
