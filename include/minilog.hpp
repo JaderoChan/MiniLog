@@ -219,7 +219,7 @@ class Logger
 {
 public:
     // Get the global instance of Logger.
-    static Logger& globalInstance()
+    static Logger& getInstance()
     {
         static Logger instance;
         return instance;
@@ -476,40 +476,40 @@ namespace mlog
 inline void addOs(const String& nameid, std::ostream& os,
                   uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
 {
-    Logger::globalInstance().addOs(nameid, os, outflag, levelFilter);
+    Logger::getInstance().addOs(nameid, os, outflag, levelFilter);
 }
 
 inline void addOs(const String& nameid, const String& filename,
                   uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
 {
-    Logger::globalInstance().addOs(nameid, filename, outflag, levelFilter);
+    Logger::getInstance().addOs(nameid, filename, outflag, levelFilter);
 }
 
 inline void removeOs(const String& nameid)
 {
-    Logger::globalInstance().removeOs(nameid);
+    Logger::getInstance().removeOs(nameid);
 }
 
 inline void clearOs()
 {
-    Logger::globalInstance().clearOs();
+    Logger::getInstance().clearOs();
 }
 
 inline void setOsAttribute(const String& nameid, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
 {
-    Logger::globalInstance().setOsAttribute(nameid, outflag, levelFilter);
+    Logger::getInstance().setOsAttribute(nameid, outflag, levelFilter);
 }
 
 template <Level level, typename T>
-void log(const T& message) { Logger::globalInstance().log<level>(message); }
+void log(const T& message) { Logger::getInstance().log<level>(message); }
 
 template <Level level, typename T>
-void log(const String& message, const T& arg) { Logger::globalInstance().log<level>(message, arg); }
+void log(const String& message, const T& arg) { Logger::getInstance().log<level>(message, arg); }
 
 template <Level level, typename T, typename... Args>
 void log(const String& message, const T& arg, Args&&... args)
 {
-    Logger::globalInstance().log<level>(message, arg, std::forward<Args>(args)...);
+    Logger::getInstance().log<level>(message, arg, std::forward<Args>(args)...);
 }
 
 template <typename T>
