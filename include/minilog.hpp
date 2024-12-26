@@ -1,7 +1,7 @@
-// The "MiniLog" library written in c++.
+// The "MiniLog" library, in c++.
 //
 // Web: https://github.com/JaderoChan/MiniLog
-// You can contact me at: c_dl_cn@outlook.com
+// You can contact me by email: c_dl_cn@outlook.com
 //
 // MIT License
 //
