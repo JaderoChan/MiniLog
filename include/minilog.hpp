@@ -219,10 +219,10 @@ class Logger
 {
 public:
     // Get the global instance of Logger.
-    static Logger& getInstance()
+    static Logger& getGlobalInstance()
     {
-        static Logger instance;
-        return instance;
+        static Logger globalInstance;
+        return globalInstance;
     }
 
     Logger() = default;
@@ -476,40 +476,40 @@ namespace mlog
 inline void addOs(const String& nameid, std::ostream& os,
                   uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
 {
-    Logger::getInstance().addOs(nameid, os, outflag, levelFilter);
+    Logger::getGlobalInstance().addOs(nameid, os, outflag, levelFilter);
 }
 
 inline void addOs(const String& nameid, const String& filename,
                   uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
 {
-    Logger::getInstance().addOs(nameid, filename, outflag, levelFilter);
+    Logger::getGlobalInstance().addOs(nameid, filename, outflag, levelFilter);
 }
 
 inline void removeOs(const String& nameid)
 {
-    Logger::getInstance().removeOs(nameid);
+    Logger::getGlobalInstance().removeOs(nameid);
 }
 
 inline void clearOs()
 {
-    Logger::getInstance().clearOs();
+    Logger::getGlobalInstance().clearOs();
 }
 
 inline void setOsAttribute(const String& nameid, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
 {
-    Logger::getInstance().setOsAttribute(nameid, outflag, levelFilter);
+    Logger::getGlobalInstance().setOsAttribute(nameid, outflag, levelFilter);
 }
 
 template <Level level, typename T>
-void log(const T& message) { Logger::getInstance().log<level>(message); }
+void log(const T& message) { Logger::getGlobalInstance().log<level>(message); }
 
 template <Level level, typename T>
-void log(const String& message, const T& arg) { Logger::getInstance().log<level>(message, arg); }
+void log(const String& message, const T& arg) { Logger::getGlobalInstance().log<level>(message, arg); }
 
 template <Level level, typename T, typename... Args>
 void log(const String& message, const T& arg, Args&&... args)
 {
-    Logger::getInstance().log<level>(message, arg, std::forward<Args>(args)...);
+    Logger::getGlobalInstance().log<level>(message, arg, std::forward<Args>(args)...);
 }
 
 template <typename T>
