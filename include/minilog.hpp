@@ -227,6 +227,12 @@ public:
 
     Logger() = default;
 
+    ~Logger() { clearOs(); }
+
+    Logger(const Logger& other) = delete;
+
+    Logger& operator=(const Logger& other) = delete;
+
     Logger(const String nameid, std::ostream& os, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
     {
         addOs(nameid, os, outflag, levelFilter);
@@ -237,12 +243,6 @@ public:
     {
         addOs(nameid, filename, outflag, levelFilter);
     }
-
-    ~Logger() { clearOs(); }
-
-    Logger(const Logger& other) = delete;
-
-    Logger& operator=(const Logger& other) = delete;
 
     void addOs(const String& nameid, std::ostream& os,
                uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
