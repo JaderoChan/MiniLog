@@ -218,13 +218,6 @@ private:
 class Logger
 {
 public:
-    // Get the global instance of Logger.
-    static Logger& getGlobalInstance()
-    {
-        static Logger globalInstance;
-        return globalInstance;
-    }
-
     Logger() = default;
 
     ~Logger() { clearOs(); }
@@ -242,6 +235,13 @@ public:
            uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
     {
         addOs(nameid, filename, outflag, levelFilter);
+    }
+
+    // @brief Get the global instance of Logger.
+    static Logger& getGlobalInstance()
+    {
+        static Logger globalInstance;
+        return globalInstance;
     }
 
     void addOs(const String& nameid, std::ostream& os,
