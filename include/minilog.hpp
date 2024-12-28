@@ -39,7 +39,7 @@
 #include <fstream>          // ofstream
 #include <stdexcept>        // runtime_error
 
-/// @brief Mini Log namespace.
+// Mini Log namespace.
 namespace mlog
 {
 
