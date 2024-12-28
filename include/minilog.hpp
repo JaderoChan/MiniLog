@@ -2,7 +2,7 @@
 //
 // Web: https://github.com/JaderoChan/MiniLog
 // You can contact me by email: c_dl_cn@outlook.com
-//
+
 // MIT License
 //
 // Copyright (c) 2024 頔珞JaderoChan
@@ -39,7 +39,7 @@
 #include <fstream>          // ofstream
 #include <stdexcept>        // runtime_error
 
-// Mini Log namespace.
+/// @brief Mini Log namespace.
 namespace mlog
 {
 
@@ -58,6 +58,7 @@ using ullong    = unsigned long long;
 
 using String    = std::string;
 
+/// @brief The log level.
 enum Level : uchar
 {
     LVL_DEBUG   = 0x01,
@@ -206,7 +207,7 @@ class StopWatch
 public:
     StopWatch() : startTime_(clock::now()) {}
 
-    // Unit is millisecond.
+    /// @note Unit is millisecond.
     ullong elapsed() const { return chr::duration_cast<chr::milliseconds>(clock::now() - startTime_).count(); }
 
     void reset() { startTime_ = clock::now(); }
@@ -237,7 +238,7 @@ public:
         addOs(nameid, filename, outflag, levelFilter);
     }
 
-    // @brief Get the global instance of Logger.
+    /// @brief Get the global instance of Logger.
     static Logger& getGlobalInstance()
     {
         static Logger globalInstance;
