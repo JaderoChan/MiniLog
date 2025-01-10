@@ -221,7 +221,7 @@ class Logger
 public:
     Logger() = default;
 
-    ~Logger() { clearOs(); }
+    ~Logger() { removeAllOs(); }
 
     Logger(const Logger& other) = delete;
 
@@ -279,7 +279,7 @@ public:
         outs_.erase(nameid);
     }
 
-    void clearOs()
+    void removeAllOs()
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
@@ -491,9 +491,9 @@ inline void removeOs(const String& nameid)
     Logger::getGlobalInstance().removeOs(nameid);
 }
 
-inline void clearOs()
+inline void removeAllOs()
 {
-    Logger::getGlobalInstance().clearOs();
+    Logger::getGlobalInstance().removeAllOs();
 }
 
 inline void setOsAttribute(const String& nameid, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
