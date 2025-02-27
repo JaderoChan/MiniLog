@@ -92,7 +92,8 @@ namespace mlog
 
 inline String levelToString(Level level)
 {
-    switch (level) {
+    switch (level)
+    {
         case LVL_DEBUG:
             return "[Debug]";
         case LVL_INFO:
@@ -113,7 +114,8 @@ String format(const String& fmt, const T& arg)
 {
     std::stringstream ss;
 
-    if (fmt.size() < 4) {
+    if (fmt.size() < 4)
+    {
         size_t pos = fmt.find("{}");
         if (pos == String::npos)
             return fmt;
@@ -125,22 +127,27 @@ String format(const String& fmt, const T& arg)
     }
 
     String window(4, '\0');
-    for (size_t i = 0; i < fmt.size();) {
+    for (size_t i = 0; i < fmt.size();)
+    {
         window[0] = fmt[i];
         window[1] = i < fmt.size() - 1 ? fmt[i + 1] : '\0';
         window[2] = i < fmt.size() - 2 ? fmt[i + 2] : '\0';
         window[3] = i < fmt.size() - 3 ? fmt[i + 3] : '\0';
 
-        if (window == "{{}}") {
+        if (window == "{{}}")
+        {
             ss << "{}";
             i += 4;
             continue;
         }
 
-        if (window[0] == '{' && window[1] == '}') {
+        if (window[0] == '{' && window[1] == '}')
+        {
             ss << arg;
             return ss.str() + fmt.substr(i + 2);
-        } else {
+        }
+        else
+        {
             ss << window[0];
             i += 1;
             continue;
@@ -155,7 +162,8 @@ String format(const String& fmt, const T& arg, Args&&... args)
 {
     std::stringstream ss;
 
-    if (fmt.size() < 4) {
+    if (fmt.size() < 4)
+    {
         size_t pos = fmt.find("{}");
         if (pos == String::npos)
             return fmt;
@@ -167,22 +175,27 @@ String format(const String& fmt, const T& arg, Args&&... args)
     }
 
     String window(4, '\0');
-    for (size_t i = 0; i < fmt.size();) {
+    for (size_t i = 0; i < fmt.size();)
+    {
         window[0] = fmt[i];
         window[1] = i < fmt.size() - 1 ? fmt[i + 1] : '\0';
         window[2] = i < fmt.size() - 2 ? fmt[i + 2] : '\0';
         window[3] = i < fmt.size() - 3 ? fmt[i + 3] : '\0';
 
-        if (window == "{{}}") {
+        if (window == "{{}}")
+        {
             ss << "{}";
             i += 4;
             continue;
         }
 
-        if (window[0] == '{' && window[1] == '}') {
+        if (window[0] == '{' && window[1] == '}')
+        {
             ss << arg;
             return ss.str() + format(fmt.substr(i + 2), std::forward<Args>(args)...);
-        } else {
+        }
+        else
+        {
             ss << window[0];
             i += 1;
             continue;
@@ -283,7 +296,8 @@ public:
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
-        for (auto& var : outs_) {
+        for (auto& var : outs_)
+        {
             delete var.second;
             var.second = nullptr;
         }
@@ -310,7 +324,8 @@ public:
 
         std::lock_guard<std::mutex> lock(mtx_);
 
-        for (auto& var : outs_) {
+        for (auto& var : outs_)
+        {
             OutStream* os = var.second;
 
             if (!(level & os->levelFilter))
@@ -321,16 +336,20 @@ public:
 
             std::stringstream ss;
 
-            if (os->outflag & OUT_WITH_TIMESTAMP) {
+            if (os->outflag & OUT_WITH_TIMESTAMP)
+            {
                 ss << (isColorize ? "\033[0m\033[1;30m" : "");
                 ss << curtimeStr;
                 ss << (isColorize ? "\033[0m" : "");
                 ss << ' ';
             }
 
-            if (os->outflag & OUT_WITH_LEVEL) {
-                if (isColorize) {
-                    switch (level) {
+            if (os->outflag & OUT_WITH_LEVEL)
+            {
+                if (isColorize)
+                {
+                    switch (level)
+                    {
                         case LVL_DEBUG:
                             ss << "\033[0m\033[34m";
                             break;
@@ -443,7 +462,8 @@ private:
 
         ~FileOutStream()
         {
-            if (os) {
+            if (os)
+            {
                 dynamic_cast<std::ofstream*>(os)->close();
                 delete os;
             }
