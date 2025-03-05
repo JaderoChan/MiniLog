@@ -51,15 +51,10 @@ namespace mlog
 namespace mlog
 {
 
-using uchar     = unsigned char;
-using uint      = unsigned int;
-using llong     = long long;
-using ullong    = unsigned long long;
-
 using String    = std::string;
 
 /// @brief The log level.
-enum Level : uchar
+enum Level
 {
     LVL_DEBUG   = 0x01,
     LVL_INFO    = 0x02,
@@ -68,7 +63,7 @@ enum Level : uchar
     LVL_FATAL   = 0x10
 };
 
-enum OutFlag : uchar
+enum OutFlag
 {
     // Whether the output attach log level.
     OUT_WITH_LEVEL      = 0x01,
@@ -79,10 +74,10 @@ enum OutFlag : uchar
     OUT_WITH_COLORIZE   = 0x04
 };
 
-constexpr uchar LEVLE_FILTER_ALL    = 0xFF;
-constexpr uchar LEVEL_FILTER_NONE   = 0x00;
-constexpr uchar OUT_WITH_ALL        = 0xFF;
-constexpr uchar OUT_WITH_NONE       = 0x00;
+constexpr int LEVLE_FILTER_ALL    = 0xFF;
+constexpr int LEVEL_FILTER_NONE   = 0x00;
+constexpr int OUT_WITH_ALL        = 0xFF;
+constexpr int OUT_WITH_NONE       = 0x00;
 
 } // namespace mlog
 
@@ -221,7 +216,10 @@ public:
     StopWatch() : startTime_(clock::now()) {}
 
     /// @note Unit is millisecond.
-    ullong elapsed() const { return chr::duration_cast<chr::milliseconds>(clock::now() - startTime_).count(); }
+    unsigned long long elapsed() const
+    {
+        return chr::duration_cast<chr::milliseconds>(clock::now() - startTime_).count();
+    }
 
     void reset() { startTime_ = clock::now(); }
 
@@ -240,13 +238,13 @@ public:
 
     Logger& operator=(const Logger& other) = delete;
 
-    Logger(const String nameid, std::ostream& os, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+    Logger(const String nameid, std::ostream& os, int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
     {
         addOs(nameid, os, outflag, levelFilter);
     }
 
     Logger(const String nameid, const String& filename,
-           uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+           int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
     {
         addOs(nameid, filename, outflag, levelFilter);
     }
@@ -259,7 +257,7 @@ public:
     }
 
     void addOs(const String& nameid, std::ostream& os,
-               uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+               int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
@@ -271,7 +269,7 @@ public:
     }
 
     void addOs(const String& nameid, const String& filename,
-               uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+               int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
@@ -305,7 +303,7 @@ public:
         outs_.clear();
     }
 
-    void setOsAttribute(const String& nameid, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+    void setOsAttribute(const String& nameid, int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
@@ -440,20 +438,20 @@ public:
 private:
     struct OutStream
     {
-        OutStream(std::ostream* os, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL) :
+        OutStream(std::ostream* os, int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL) :
             os(os), outflag(outflag), levelFilter(levelFilter)
         {}
 
         virtual ~OutStream() { os = nullptr; }
 
-        uchar outflag       = OUT_WITH_ALL;
-        uchar levelFilter   = LEVLE_FILTER_ALL;
+        int outflag       = OUT_WITH_ALL;
+        int levelFilter   = LEVLE_FILTER_ALL;
         std::ostream* os    = nullptr;
     };
 
     struct FileOutStream final : public OutStream
     {
-        FileOutStream(const String& filename, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL) :
+        FileOutStream(const String& filename, int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL) :
             OutStream(new std::ofstream(filename, std::ios_base::app), outflag, levelFilter)
         {
             if (!os || !dynamic_cast<std::ofstream*>(os)->is_open())
@@ -495,13 +493,13 @@ namespace mlog
 {
 
 inline void addOs(const String& nameid, std::ostream& os,
-                  uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+                  int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
 {
     Logger::getGlobalInstance().addOs(nameid, os, outflag, levelFilter);
 }
 
 inline void addOs(const String& nameid, const String& filename,
-                  uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+                  int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
 {
     Logger::getGlobalInstance().addOs(nameid, filename, outflag, levelFilter);
 }
@@ -516,7 +514,7 @@ inline void removeAllOs()
     Logger::getGlobalInstance().removeAllOs();
 }
 
-inline void setOsAttribute(const String& nameid, uchar outflag = OUT_WITH_ALL, uchar levelFilter = LEVLE_FILTER_ALL)
+inline void setOsAttribute(const String& nameid, int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
 {
     Logger::getGlobalInstance().setOsAttribute(nameid, outflag, levelFilter);
 }
