@@ -216,7 +216,7 @@ public:
     StopWatch() : startTime_(clock::now()) {}
 
     /// @note Unit is millisecond.
-    unsigned long long elapsed() const
+    long long elapsed() const
     {
         return chr::duration_cast<chr::milliseconds>(clock::now() - startTime_).count();
     }
