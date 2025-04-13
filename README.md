@@ -1,2 +1,2 @@
 # Mini Log
-A simple log record library.
+A simple log library.
