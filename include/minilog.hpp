@@ -58,7 +58,7 @@ enum Level
 {
     LVL_DEBUG   = 0x01,
     LVL_INFO    = 0x02,
-    LVL_WARN    = 0x04,
+    LVL_WARNING = 0x04,
     LVL_ERROR   = 0x08,
     LVL_FATAL   = 0x10
 };
@@ -93,8 +93,8 @@ inline String levelToString(Level level)
             return "[Debug]";
         case LVL_INFO:
             return "[Info]";
-        case LVL_WARN:
-            return "[Warn]";
+        case LVL_WARNING:
+            return "[Warning]";
         case LVL_ERROR:
             return "[Error]";
         case LVL_FATAL:
@@ -354,7 +354,7 @@ public:
                         case LVL_INFO:
                             ss << "\033[0m\033[32m";
                             break;
-                        case LVL_WARN:
+                        case LVL_WARNING:
                             ss << "\033[0m\033[33m";
                             break;
                         case LVL_ERROR:
@@ -409,12 +409,12 @@ public:
     }
 
     template <typename T>
-    void warn(const T& message) { log<LVL_WARN>(message); }
+    void warning(const T& message) { log<LVL_WARNING>(message); }
 
     template <typename T, typename... Args>
-    void warn(const String& message, const T& arg, Args&&... args)
+    void warning(const String& message, const T& arg, Args&&... args)
     {
-        log<LVL_WARN>(message, arg, std::forward<Args>(args)...);
+        log<LVL_WARNING>(message, arg, std::forward<Args>(args)...);
     }
 
     template <typename T>
@@ -550,12 +550,12 @@ void info(const String& message, const T& arg, Args&&... args)
 }
 
 template <typename T>
-void warn(const T& message) { log<LVL_WARN>(message); }
+void warning(const T& message) { log<LVL_WARNING>(message); }
 
 template <typename T, typename... Args>
-void warn(const String& message, const T& arg, Args&&... args)
+void warning(const String& message, const T& arg, Args&&... args)
 {
-    log<LVL_WARN>(message, arg, std::forward<Args>(args)...);
+    log<LVL_WARNING>(message, arg, std::forward<Args>(args)...);
 }
 
 template <typename T>
