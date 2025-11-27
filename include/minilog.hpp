@@ -210,6 +210,13 @@ public:
         return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - startTime_).count();
     }
 
+    long long elapsedAndReset()
+    {
+        auto e = elapsed();
+        reset();
+        return e;
+    }
+
     void reset() { startTime_ = Clock::now(); }
 
 private:
