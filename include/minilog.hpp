@@ -29,7 +29,7 @@
 #define MINILOG_HPP
 
 #include <cstddef>          // size_t
-#include <ctime>            // time_t, tm, time(), localtime_s(), strftime()
+#include <ctime>            // time_t, tm, time, localtime_s, strftime
 #include <chrono>           // chrono For #StopWatch
 #include <mutex>            // mutex, lock_guard For thread-safe
 #include <string>           // string
@@ -39,19 +39,10 @@
 #include <fstream>          // ofstream
 #include <stdexcept>        // runtime_error
 
-// Mini Log namespace.
 namespace mlog
 {
 
-// Just for the intellisense better show "tip about namespace". :)
-
-}
-
-// Type alias, enum and constants.
-namespace mlog
-{
-
-using String    = std::string;
+using String = std::string;
 
 /// @brief The log level.
 enum Level
@@ -81,7 +72,6 @@ constexpr int OUT_WITH_NONE       = 0x00;
 
 } // namespace mlog
 
-// Aux functions.
 namespace mlog
 {
 
@@ -202,29 +192,28 @@ String format(const String& fmt, const T& arg, Args&&... args)
 
 } // namespace mlog
 
-// Classes.
 namespace mlog
 {
 
-namespace chr = std::chrono;
-
 class StopWatch
 {
-    using clock = chr::steady_clock;
+    using Clock = std::chrono::steady_clock;
+    template <typename T>
+    using TimePoint = std::chrono::time_point<T>;
 
 public:
-    StopWatch() : startTime_(clock::now()) {}
+    StopWatch() : startTime_(Clock::now()) {}
 
     /// @note Unit is millisecond.
     long long elapsed() const
     {
-        return chr::duration_cast<chr::milliseconds>(clock::now() - startTime_).count();
+        return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - startTime_).count();
     }
 
-    void reset() { startTime_ = clock::now(); }
+    void reset() { startTime_ = Clock::now(); }
 
 private:
-    chr::time_point<clock> startTime_;
+    TimePoint<Clock> startTime_;
 };
 
 class Logger
@@ -244,7 +233,7 @@ public:
     }
 
     Logger(const String nameid, const String& filename,
-           int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
+        int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
     {
         addOs(nameid, filename, outflag, levelFilter);
     }
@@ -257,24 +246,24 @@ public:
     }
 
     void addOs(const String& nameid, std::ostream& os,
-               int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
+        int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
         if (outs_.find(nameid) != outs_.end())
-            throw std::runtime_error("The nameid is already exist.");
+            throw std::runtime_error("The name id is already exist");
 
         OutStream* os_ = new OutStream(&os, outflag, levelFilter);
         outs_.insert({ nameid, os_ });
     }
 
     void addOs(const String& nameid, const String& filename,
-               int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
+        int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
 
         if (outs_.find(nameid) != outs_.end())
-            throw std::runtime_error("The nameid is already exist.");
+            throw std::runtime_error("The name id is already exist");
 
         OutStream* os_ = new FileOutStream(filename, outflag, levelFilter);
         outs_.insert({ nameid, os_} );
@@ -308,7 +297,7 @@ public:
         std::lock_guard<std::mutex> lock(mtx_);
 
         if (outs_.find(nameid) == outs_.end())
-            throw std::runtime_error("The nameid is not exist.");
+            throw std::runtime_error("The nameid is not exist");
 
         outs_[nameid]->outflag = outflag;
         outs_[nameid]->levelFilter = levelFilter;
@@ -438,8 +427,8 @@ public:
 private:
     struct OutStream
     {
-        OutStream(std::ostream* os, int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL) :
-            os(os), outflag(outflag), levelFilter(levelFilter)
+        OutStream(std::ostream* os, int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
+            : os(os), outflag(outflag), levelFilter(levelFilter)
         {}
 
         virtual ~OutStream() { os = nullptr; }
@@ -451,8 +440,8 @@ private:
 
     struct FileOutStream final : public OutStream
     {
-        FileOutStream(const String& filename, int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL) :
-            OutStream(new std::ofstream(filename, std::ios_base::app), outflag, levelFilter)
+        FileOutStream(const String& filename, int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
+            : OutStream(new std::ofstream(filename, std::ios_base::app), outflag, levelFilter)
         {
             if (!os || !dynamic_cast<std::ofstream*>(os)->is_open())
                 throw std::runtime_error("Failed to open the file: " + filename);
@@ -488,18 +477,17 @@ private:
 
 }
 
-// Faster way.
 namespace mlog
 {
 
 inline void addOs(const String& nameid, std::ostream& os,
-                  int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
+    int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
 {
     Logger::getGlobalInstance().addOs(nameid, os, outflag, levelFilter);
 }
 
 inline void addOs(const String& nameid, const String& filename,
-                  int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
+    int outflag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
 {
     Logger::getGlobalInstance().addOs(nameid, filename, outflag, levelFilter);
 }
