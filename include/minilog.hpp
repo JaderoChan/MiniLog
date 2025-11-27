@@ -34,7 +34,7 @@
 #include <mutex>            // mutex, lock_guard For thread-safe
 #include <string>           // string
 #include <unordered_map>    // unordered_map
-#include <iostream>         // ostream, cout, cerr, clog, endl
+#include <iostream>         // ostream, cout, cerr, clog
 #include <sstream>          // stringstream
 #include <fstream>          // ofstream
 #include <stdexcept>        // runtime_error
@@ -370,7 +370,7 @@ public:
                 ss << ' ';
             }
 
-            ss << message << std::endl;
+            ss << message << "\n";
 
             if (os->os)
                 *os->os << ss.str();
