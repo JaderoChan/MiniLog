@@ -344,19 +344,19 @@ public:
                 {
                     switch (level)
                     {
-                        case LVL_DEBUG:
+                        case LVL_DEBUG:     // Blue
                             ss << "\033[0m\033[34m";
                             break;
-                        case LVL_INFO:
+                        case LVL_INFO:      // Green
                             ss << "\033[0m\033[32m";
                             break;
-                        case LVL_WARNING:
+                        case LVL_WARNING:   // Yellow
                             ss << "\033[0m\033[33m";
                             break;
-                        case LVL_ERROR:
+                        case LVL_ERROR:     // Red
                             ss << "\033[0m\033[31m";
                             break;
-                        case LVL_FATAL:
+                        case LVL_FATAL:     // Purple
                             ss << "\033[0m\033[35m";
                             break;
                         default:
