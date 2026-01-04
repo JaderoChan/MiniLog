@@ -1,7 +1,7 @@
 // The "MiniLog" library, in c++.
 //
-// Web: https://github.com/JaderoChan/MiniLog
-// You can contact me by email: c_dl_cn@outlook.com
+// Repository: https://github.com/JaderoChan/MiniLog
+// Contact email: c_dl_cn@outlook.com
 
 // MIT License
 //
@@ -44,7 +44,7 @@ namespace mlog
 
 using String = std::string;
 
-/// @brief The log level.
+/// @brief Log level enumeration.
 enum Level
 {
     LVL_DEBUG   = 0x01,
@@ -54,14 +54,15 @@ enum Level
     LVL_FATAL   = 0x10
 };
 
+/// @brief Output formatting flags.
 enum OutFlag
 {
-    // Whether the output attach log level.
+    /// Whether to include log level in the output.
     OUT_WITH_LEVEL      = 0x01,
-    // Whether the output attach timestamp.
+    /// Whether to include timestamp in the output.
     OUT_WITH_TIMESTAMP  = 0x02,
-    // Whether colorize the output.
-    // Just useful for std::cout, std::cerr, std::clog.
+    /// Whether to colorize the output.
+    /// Only effective for std::cout, std::cerr, and std::clog.
     OUT_WITH_COLORIZE   = 0x04
 };
 
@@ -204,7 +205,8 @@ class StopWatch
 public:
     StopWatch() : startTime_(Clock::now()) {}
 
-    /// @note Unit is millisecond.
+    /// @brief Get the elapsed time since the timer started.
+    /// @return Elapsed time in milliseconds.
     long long elapsed() const
     {
         return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - startTime_).count();
@@ -245,7 +247,8 @@ public:
         addOs(nameid, filename, outflag, levelFilter);
     }
 
-    /// @brief Get the global instance of Logger.
+    /// @brief Get the global logger instance (singleton pattern).
+    /// @return Reference to the global Logger instance.
     static Logger& getGlobalInstance()
     {
         static Logger globalInstance;
