@@ -422,8 +422,8 @@ private:
 
         virtual ~OutStream() { os = nullptr; }
 
-        int outFlag       = OUT_WITH_ALL;
-        int levelFilter   = LEVLE_FILTER_ALL;
+        int outFlag         = OUT_WITH_ALL;
+        int levelFilter     = LEVLE_FILTER_ALL;
         std::ostream* os    = nullptr;
     };
 
