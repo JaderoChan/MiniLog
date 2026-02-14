@@ -223,10 +223,10 @@ public:
         addOs(nameId, os, outFlag, levelFilter);
     }
 
-    Logger(const std::string nameId, const std::string& filename,
+    Logger(const std::string nameId, const std::string& filepath,
         int outFlag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
     {
-        addOs(nameId, filename, outFlag, levelFilter);
+        addOs(nameId, filepath, outFlag, levelFilter);
     }
 
     /// @brief Get the global logger instance (singleton pattern).
@@ -249,7 +249,7 @@ public:
         outs_.insert({nameId, os_});
     }
 
-    void addOs(const std::string& nameId, const std::string& filename,
+    void addOs(const std::string& nameId, const std::string& filepath,
         int outFlag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
     {
         std::lock_guard<std::mutex> lock(mtx_);
@@ -257,7 +257,7 @@ public:
         if (outs_.find(nameId) != outs_.end())
             throw std::runtime_error("The name id is already exist");
 
-        OutStream* os_ = new FileOutStream(filename, outFlag, levelFilter);
+        OutStream* os_ = new FileOutStream(filepath, outFlag, levelFilter);
         outs_.insert({nameId, os_});
     }
 
@@ -429,11 +429,11 @@ private:
 
     struct FileOutStream final : public OutStream
     {
-        FileOutStream(const std::string& filename, int outFlag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
-            : OutStream(new std::ofstream(filename, std::ios_base::app), outFlag, levelFilter)
+        FileOutStream(const std::string& filepath, int outFlag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
+            : OutStream(new std::ofstream(filepath, std::ios_base::app), outFlag, levelFilter)
         {
             if (!os || !dynamic_cast<std::ofstream*>(os)->is_open())
-                throw std::runtime_error("Failed to open the file: " + filename);
+                throw std::runtime_error("Failed to open the file: " + filepath);
         }
 
         ~FileOutStream()
@@ -470,10 +470,10 @@ inline void addOs(const std::string& nameId, std::ostream& os,
     Logger::getGlobalInstance().addOs(nameId, os, outFlag, levelFilter);
 }
 
-inline void addOs(const std::string& nameId, const std::string& filename,
+inline void addOs(const std::string& nameId, const std::string& filepath,
     int outFlag = OUT_WITH_ALL, int levelFilter = LEVLE_FILTER_ALL)
 {
-    Logger::getGlobalInstance().addOs(nameId, filename, outFlag, levelFilter);
+    Logger::getGlobalInstance().addOs(nameId, filepath, outFlag, levelFilter);
 }
 
 inline void removeOs(const std::string& nameId)
